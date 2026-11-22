@@ -36,6 +36,17 @@ python3 deploy/visitors.py --preview --port 8000 --db "${TMPDIR:-/tmp}/neverland
 
 访客完成 Stage 3 声音验证后获得全站编号。生产环境由 nginx 保护通行证和论坛，转发取号请求给 `neverland-visitors.service`。服务脚本安装在 `/opt/neverland-visitors/visitors.py`，数据库保存在 `/var/lib/neverland-visitors/visitors.sqlite3`，独立于静态站点发布目录。
 
+## 维护期间与恢复开放
+
+两个域名共用 nginx 站点。维护配置 `deploy/neverland-maintenance.conf` 从独立目录 `/var/www/neverland/maintenance` 提供 `404.html` 和所需素材，访客页面和 API 都返回 HTTP 503。常规发布可以继续更新 `current`，重新开放时会使用它指向的版本。
+
+在 yycore 上执行以下命令可恢复开放。
+
+```sh
+sudo ln -sfnT /etc/nginx/sites-available/neverland.conf /etc/nginx/sites-enabled/neverland.conf
+sudo nginx -t && sudo systemctl reload nginx
+```
+
 ## 目录
 
 - `assets/img/` 挥手、点赞等贴纸 GIF

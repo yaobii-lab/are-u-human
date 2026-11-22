@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Portal offline · Human Verification Portal</title>
+  <link rel="icon" href="/assets/img/logo.png">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/assets/fonts/portal/fonts.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+    }
+    main, .bar-inner {
+      width: min(100%, 420px);
+      margin-inline: auto;
+      padding-inline: var(--s-5);
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding-block: var(--s-6);
+    }
+    .logo {
+      height: clamp(120px, 25vh, 210px);
+      width: auto;
+      margin: 0 0 var(--s-5) -8px;
+    }
+    h1 {
+      margin: 0 0 var(--s-5);
+      font: 900 var(--fs-display)/var(--lh-tight) var(--font-display);
+    }
+    .tape {
+      padding-inline: .1em;
+      margin-left: -.1em;
+      background: var(--danger);
+      color: var(--white);
+    }
+    p { margin: 0; line-height: var(--lh-body); }
+    .notice { font-size: var(--fs-lead); }
+    .translation { margin-top: var(--s-2); color: var(--text-sub); }
+    .bar {
+      display: block;
+      padding: var(--s-5) 0 calc(var(--s-5) + env(safe-area-inset-bottom));
+      background: var(--accent);
+      color: var(--white);
+      text-decoration: none;
+    }
+    .bar:hover { background: var(--accent-hover); }
+    .bar:focus-visible { outline: 3px solid white; outline-offset: -6px; }
+    .bar-inner { display: flex; align-items: center; justify-content: space-between; }
+    .bar small { display: block; margin-bottom: var(--s-1); color: var(--brand-200); }
+    .bar strong { font-size: var(--fs-lead); font-weight: 500; }
+    .arrow { font-size: var(--fs-title); }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="logo" src="/assets/img/logo.png" width="590" height="880" alt="Human Verification Portal">
+    <h1><span class="tape">404</span><br>Portal<br>offline.</h1>
+    <p class="notice" lang="zh-CN">站点维护中，请稍后再来。</p>
+    <p class="translation">Down for maintenance. Please check back soon.</p>
+  </main>
+  <a class="bar" href="/">
+    <span class="bar-inner">
+      <span><small>Human Verification Portal</small><strong lang="zh-CN">重新访问 / <span lang="en">Try again</span></strong></span>
+      <span class="arrow" aria-hidden="true">→</span>
+    </span>
+  </a>
+</body>
+</html>
