@@ -22,7 +22,7 @@ if (window.self === window.top) {{
 </script>"""
 groups = {
     "ariari.art": ["index.html", "forum.html"],
-    "portal.ariari.art": ["start.html", "face.html", "stage2.html", "stage3.html", "jury.html", "pass.html", "credits.html"],
+    "portal.ariari.art": ["start.html", "face.html", "stage2.html", "stage3.html", "certified.html", "pass.html", "credits.html"],
 }
 for host, pages in groups.items():
     root = args.output / host
@@ -33,9 +33,15 @@ for host, pages in groups.items():
             dest = root / asset.relative_to(source)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(asset, dest)
-    for name in ["visitor.js", "flow.js", "i18n.js", "gate.css", "tokens.css", "bloom.js"]:
+    for name in ["visitor.js", "flow.js", "flow.css", "i18n.js", "gate.css", "tokens.css", "bloom.js", "eyes.js"]:
         shutil.copyfile(source / name, root / name)
     shutil.copytree(source / "i18n", root / "i18n")
+    if "pass.html" in pages:
+        shutil.copyfile(source / "eyes-lab.html", root / "eyes-lab.html")
+        for directory in ("stage2-header-lab", "briefs/ref/out/align"):
+            shutil.copytree(source / directory, root / directory)
+        for name in ["pass.js", "pass.css"]:
+            shutil.copyfile(source / name, root / name)
     for name in pages:
         if name == "credits.html":
             soundtrack = Path("assets/audio/credits.mp3")

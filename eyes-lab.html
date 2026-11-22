@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gate · 注视实验</title>
+<link rel="icon" href="assets/img/logo.png"><link rel="stylesheet" href="tokens.css">
+<style>
+*{box-sizing:border-box}body{margin:0;color:var(--brand-900);background:var(--brand-50);font-family:var(--font-body)}
+main{max-width:1060px;margin:auto;padding:clamp(24px,6vw,76px) 22px}
+header{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--brand-300)}
+h1{font-size:clamp(26px,4.6vw,48px);font-weight:500;letter-spacing:-.055em;margin:0}
+a{color:var(--brand-700);font-size:14px}section{display:grid;grid-template-columns:1fr minmax(215px,26%);gap:32px;margin-top:24px}
+.scene{position:relative;isolation:isolate;min-height:430px;background:linear-gradient(145deg,white,var(--brand-100));overflow:hidden}
+.scene::before{content:"";position:absolute;inset:21% 6% 0;background:linear-gradient(102deg,transparent 54%,#b4d6e24d),linear-gradient(180deg,var(--brand-200),var(--brand-600) 39%,var(--brand-700) 85%);box-shadow:0 -3px 14px #b4d6e253;opacity:0;transition:opacity .65s}
+.scene:has([data-state=surfaced])::before{opacity:1}
+h2{font-size:16px;font-weight:600;margin:0 0 12px}
+#poses{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+button{border:1px solid var(--brand-300);background:transparent;color:inherit;cursor:pointer;font:inherit;min-height:42px}
+button[aria-pressed=true]{color:white;background:var(--brand-800);border-color:var(--brand-800)}
+.controls>div+div{border-top:1px solid var(--brand-300);margin-top:24px;padding-top:20px}
+.directions{display:flex;gap:5px}.directions button{flex:1}
+label{display:flex;justify-content:space-between;align-items:baseline;font-weight:600}output{font:13px ui-monospace,monospace}
+input{width:100%;margin:14px 0;accent-color:var(--brand-600)}:focus-visible{outline:2px solid var(--brand-700);outline-offset:2px}
+@media(max-width:640px){main{padding:22px 16px}section{grid-template-columns:1fr;gap:22px;margin-top:16px}.scene{min-height:32dvh}#poses{grid-template-columns:repeat(3,1fr)}}
+@media(prefers-reduced-motion:reduce){*::before{transition:none!important}}
+</style>
+</head>
+<body><main><header><h1>Gate 注视实验</h1><a href="stage3.html?lang=zh">打开语气关 ↗</a></header>
+<section><div class="scene" id="scene" aria-hidden="true"></div><div class="controls">
+<div><h2>表情</h2><div id="poses"></div></div>
+<div><h2>模拟视线</h2><div class="directions"><button data-x="-1">向左</button><button data-x="0">居中</button><button data-x="1">向右</button></div></div>
+<div><label for="level">模拟音量 <output id="reading" for="level">−60 dB</output></label><input type="range" id="level" min="-60" max="-12" value="-60"></div>
+</div></section></main>
+<script src="eyes.js" data-scene="lab" data-mount="#scene"></script>
+<script>
+const labels={watch:'注视',scrutinize:'审视',doubt:'疑惑',cold:'冷漠',pass:'放行',surfaced:'浮现'};
+const poses=document.getElementById('poses');
+for(const [id,label] of Object.entries(labels)){
+  const button=document.createElement('button');
+  button.textContent=label;button.dataset.pose=id;poses.append(button);
+  button.onclick=()=>{
+    const url=new URL(location.href);url.searchParams.set('eyes',id);history.replaceState(null,'',url);
+    Eyes.set(id);refresh();
+  };
+}
+function refresh(){
+  const state=document.querySelector('.gate-eyes').dataset.state;
+  for(const button of poses.children)button.setAttribute('aria-pressed',String(button.dataset.pose===state));
+}
+refresh();
+document.querySelectorAll('[data-x]').forEach(button=>button.onclick=()=>Eyes.track(Number(button.dataset.x),0));
+document.getElementById('level').oninput=e=>{
+  document.getElementById('reading').value=e.target.value+' dB';Eyes.level(Number(e.target.value));
+};
+</script></body></html>

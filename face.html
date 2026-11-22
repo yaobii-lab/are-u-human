@@ -159,6 +159,8 @@ html:lang(zh-CN) .gate .local{font:400 24px/1.1 PortalPixel,"PingFang SC",sans-s
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
+<link rel="stylesheet" href="flow.css">
+<script src="flow.js"></script>
 </head>
 <body>
 <iframe class="behind" data-background-page="index.html" tabindex="-1" aria-hidden="true"></iframe>
@@ -187,16 +189,17 @@ html:lang(zh-CN) .gate .local{font:400 24px/1.1 PortalPixel,"PingFang SC",sans-s
   </div>
 </div>
 
-<!-- 11-22: no separate Get Started page. The camera opens straight away; this card sits over the bottom half and leaves once a face is found. -->
+<!-- The notice stays in place until the visitor confirms and the camera starts. -->
 <div class="gate" id="gate" role="dialog" aria-labelledby="gt"><div>
   <img class="gicon" src="assets/svg/scan-face.svg" alt="" width="48" height="48">
   <h1 id="gt" data-i18n="face.heading">Face Verification</h1>
-  <p data-i18n="face.position">Put your face inside the circle.</p>
+  <p data-i18n="face.position">Select OK to turn on your camera, then put your face inside the circle.</p>
   <p class="local" data-i18n="face.local">ALL DATA IS PROCESSED LOCALLY.</p>
   <button type="button" id="ok" disabled data-i18n="face.okCountdown" data-n="3">OK (3)</button>
   <div class="err" id="err"></div>
 </div></div>
 
+<script src="eyes.js" data-scene="face"></script>
 <script>i18n.apply(document);</script>
 <script type="module">
 import {FilesetResolver,FaceLandmarker,ObjectDetector} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
@@ -221,20 +224,47 @@ function say(step,line,sub,bad,big){
   lastSay=performance.now();}
 
 // ---- models ----
-let face=null,obj=null,ready=false,lastFr=null,objs=[];
-(async()=>{try{
+let face=null,obj=null,lastFr=null,objs=[];
+const modelLoaded=(async()=>{try{
   const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
   face=await FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",delegate:"GPU"},runningMode:"VIDEO",numFaces:1,outputFaceBlendshapes:true});
-  ready=true;}catch(e){$('err').textContent=t('face.modelError');}})();
+  }catch(e){$('err').textContent=t('face.modelError');}})();
 
-(async()=>{try{
-  v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});
-  await v.play();go('lock');requestAnimationFrame(loop);
-}catch(e){$('err').textContent=t('face.cameraBlocked');}})();
+async function confirmCamera(){
+  const button=$('ok');
+  if(button.disabled)return;
+  button.disabled=true;
+  await modelLoaded;
+  if(!face)return;
+  $('err').textContent='';
+  try {
+    v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});
+    await v.play();
+  } catch {
+    v.srcObject?.getTracks().forEach(track=>track.stop());
+    v.srcObject=null;
+    $('err').textContent=t('face.cameraBlocked');
+    button.disabled=false;
+    return;
+  }
+  const gate=$('gate');
+  gate.classList.add('out');
+  setTimeout(()=>gate.remove(),400);
+  go('lock');
+  requestAnimationFrame(loop);
+}
 
-// the notice card: OK unlocks after a 3s countdown (11-22)
-(async()=>{const b=$('ok');for(let n=3;n>0;n--){b.textContent=t('face.okCountdown', {n});await new Promise(r=>setTimeout(r,1000));}b.textContent=t('face.ok');b.disabled=false;b.focus();
-  b.onclick=()=>{if($('err').textContent)return;const g=$('gate');g.classList.add('out');setTimeout(()=>g.remove(),400);};})();
+(async()=>{
+  const button=$('ok');
+  for(let n=3;n>0;n--){
+    button.textContent=t('face.okCountdown',{n});
+    await new Promise(resolve=>setTimeout(resolve,1000));
+  }
+  button.textContent=t('face.ok');
+  button.onclick=confirmCamera;
+  button.disabled=false;
+  button.focus();
+})();
 // ---- drawing inside the lens ----
 function sizeCanvas(){const r=cv.getBoundingClientRect();cv.width=r.width*dpr;cv.height=r.height*dpr;}
 addEventListener('resize',sizeCanvas);
@@ -306,14 +336,14 @@ async function rhythm(ts){const r=$('rhy'),ph=document.querySelector('.phone');
   r.innerHTML='<div class="ln"></div>'+ts.map((t,i)=>`<b style="left:${x(t)}%;transition-delay:${.35+i*.25}s"></b>`).join('')
     +ts.slice(1).map((t,i)=>`<span style="left:${(x(t)+x(ts[i]))/2}%;transition-delay:${.6+i*.25}s">${((t-ts[i])/1000).toFixed(2)}s</span>`).join('');
   ph.classList.add('mini');setTimeout(sizeCanvas,750);await wait(350);r.classList.add('on');await wait(900);}
-async function blinkRound(line){await sayA(line,'');await resetRing();await countdown();await sayA(line,t('face.progress', {k: 0, n: 3}));return measureN(3,10000);}
+async function blinkRound(line){Eyes.set('scrutinize');await sayA(line,'');await resetRing();await countdown();await sayA(line,t('face.progress', {k: 0, n: 3}));return measureN(3,10000);}
 async function stage1(run){
   const live=()=>run===stage1Run;
   await Promise.all([Bloom.play({from:document.querySelector('.lens'),color:'pass',text:'#fff',hold:600}),sayA(t('face.complete'),'',true)]);await wait(500);if(!live())return;
   await sayA(t('face.more'),'');await wait(900);if(!live())return;
   // round 1: always rejected. The reason comes from the gaps between your 3 blinks.
   tries=1;let ts=await blinkRound(t('face.threeBlinks'));if(!live())return;
-  shake();hud=true;
+  shake();hud=true;Eyes.set('doubt');Eyes.lookAt($('msg'));
   const gaps=ts.slice(1).map((t,i)=>(t-ts[i])/1000),sec=g=>g.toFixed(2)+'s';
   if(gaps.length<2)await sayA(t(ts.length===1?'face.sawOne':'face.sawMany', {count: ts.length}),t('face.humanWould'));
   else if(Math.abs(gaps[0]-gaps[1])/((gaps[0]+gaps[1])/2)<.5)
@@ -323,11 +353,11 @@ async function stage1(run){
   await askRetry(t('face.retry'));rhythm(null);await wait(500);if(!live())return;
   // round 2: always rejected. You followed the advice, so now it's on purpose.
   tries=2;ts=await blinkRound(t('face.threeAgain'));if(!live())return;
-  shake();await sayA(t('face.onPurpose'),t('face.noThinking'));
+  shake();Eyes.set('cold');await sayA(t('face.onPurpose'),t('face.noThinking'));
   await askRetry(t('face.retry'));if(!live())return;
   // round 3: always passes. Whatever you did is now explained as human (11-22 她定的三种解释).
-  tries=3;const c=await attempt();if(!live())return;const r3=c*12,below=pctBelow(r3);
-  $('hist').classList.add('ok');
+  tries=3;Eyes.set('scrutinize');const c=await attempt();if(!live())return;const r3=c*12,below=pctBelow(r3);
+  Eyes.set('pass');$('hist').classList.add('ok');
   if(r3>22)await sayA(t('face.frequent'),t('face.above', {pct: below}));
   else if(r3<12)await sayA(t('face.rare'),t('face.below', {pct: 100-below}));
   else await sayA(t('face.normal'),t('face.regular', {rate: r3}));
@@ -336,7 +366,7 @@ async function stage1(run){
   flowNext();  // straight on to Stage 2; the old expression / surroundings / phone steps are gone (11-22)
 }
 const STEPS={
-  lock:{enter(){stage1Run++;tries=0;hud=false;axis(null);progress(0);$('line').textContent='';sayA(t('face.frame'),'',true);},
+  lock:{enter(){Eyes.set('watch');stage1Run++;tries=0;hud=false;axis(null);progress(0);$('line').textContent='';sayA(t('face.frame'),'',true);},
     tick(f){if(!f.pts){mem.ok=0;return;}
       if($('gate'))return;
       if(f.size<.32){if(mem.hint!=='far'){mem.hint='far';sayA(t('face.closer'),'',true);}mem.ok=0;return;}
@@ -345,7 +375,7 @@ const STEPS={
   // Face ID-style enrollment: ticks light where your head points.
   // Face ID-style enrollment: ticks light where your head points. Smoothed head direction, wide brush,
   // and the circle closes itself once most of it is lit, so it never feels stuck (11-22).
-  circle:{enter(){ticks.forEach(t=>t.classList.remove('on'));shown=-1;mem.lit=new Set();mem.sx=0;mem.sy=0;sayA(t('face.moveHead'),'');},
+  circle:{enter(){Eyes.set('scrutinize');ticks.forEach(t=>t.classList.remove('on'));shown=-1;mem.lit=new Set();mem.sx=0;mem.sy=0;sayA(t('face.moveHead'),'');},
     tick(f){if(!f.pts||mem.fill)return;
       mem.sx+=(f.dx-mem.sx)*.35;mem.sy+=(f.dy-mem.sy)*.35;
       if(Math.hypot(mem.sx,mem.sy)>.05){const a=Math.atan2(mem.sy,mem.sx),c=Math.round(((a+Math.PI/2)/(2*Math.PI))*N);
@@ -363,7 +393,7 @@ function loop(now){
   requestAnimationFrame(loop);if(v.readyState<2)return;
   if(!cv.width)sizeCanvas();
   frame++;let fr=null;
-  if(ready&&v.currentTime!==lastT){lastT=v.currentTime;fr=face.detectForVideo(v,now);if(obj&&frame%4===0)objs=obj.detectForVideo(v,now).detections||[];}
+  if(v.currentTime!==lastT){lastT=v.currentTime;fr=face.detectForVideo(v,now);if(obj&&frame%4===0)objs=obj.detectForVideo(v,now).detections||[];}
   if(fr)lastFr=fr;else fr=lastFr;
   const pts=fr&&fr.faceLandmarks&&fr.faceLandmarks[0],bs={};
   if(fr&&fr.faceBlendshapes&&fr.faceBlendshapes[0])fr.faceBlendshapes[0].categories.forEach(c=>bs[c.categoryName]=c.score);
@@ -389,11 +419,11 @@ function loop(now){
   let geo={};
   if(pts){const [nx,ny]=map(pts[1].x,pts[1].y),[lx]=map(pts[234].x,pts[234].y),[rx]=map(pts[454].x,pts[454].y),[,ty]=map(pts[10].x,pts[10].y),[,by]=map(pts[152].x,pts[152].y);
     const w=Math.abs(rx-lx),mx=(lx+rx)/2,my=(ty+by)/2;
+    Eyes.track(2*mx/cv.width-1,2*my/cv.height-1,'face');
     geo={dx:(nx-mx)/w,dy:(ny-my)/(by-ty)-.08,size:w/cv.width,off:Math.hypot(mx/cv.width-.5,my/cv.height-.5)};geo.mag=Math.hypot(geo.dx,geo.dy);}
   if(S&&STEPS[S].tick)STEPS[S].tick({pts,blinked,smile,names,...geo});
 }
 </script>
-<script src="flow.js"></script>
 <script src="bloom.js"></script>
 </body>
 </html>

@@ -14,6 +14,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
+html{background:#0d0e10}
 body{background:#008080;font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,Geneva,sans-serif;font-size:12px;color:#000;overflow:hidden}
 
 /* Win95 bevels */
@@ -70,14 +71,16 @@ body{background:#008080;font-family:"MS Sans Serif","Microsoft Sans Serif",Tahom
 @keyframes wave-flip{0%{transform:scaleX(-1) rotate(-14deg)}50%{transform:scaleX(-1) rotate(10deg)}}
 h1{margin:0;font-size:clamp(40px,6.4vw,72px);font-weight:700;color:var(--ink);text-shadow:1px 1px 0 #c9c3ff}
 .tag{margin:18px 0 0;font-size:clamp(24px,3.4vw,38px);font-weight:700;color:var(--ink2)}
-.welcome{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:rgba(0,128,128,.35);transition:opacity 1.6s ease}
-.welcome.gone{opacity:0;pointer-events:none}
-.welcome .win{max-width:460px;background:var(--win);padding:2px}
+.welcome{position:fixed;inset:0;z-index:60;display:grid;place-items:safe center;padding:16px;overflow:auto;background:rgba(0,128,128,.35)}
+.welcome .win{width:min(420px,100%);background:var(--win);padding:2px}
 .welcome .bd{padding:18px 20px 20px;font-size:15px;line-height:1.5}
-.welcome h2{margin:0 0 10px;font-size:32px;color:var(--pink);letter-spacing:.04em}
+.welcome h2{margin:0 0 10px;font-size:32px;color:#ad095c;letter-spacing:.04em}
 .welcome .share{margin-top:10px}
-.welcome .sorry{margin-top:10px;color:var(--red)}
-@media (prefers-reduced-motion:reduce){.welcome{transition:none}}
+.welcome .sorry{margin-top:10px;color:#9b0000}
+.welcome .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.welcome button{min-width:82px;min-height:36px;background:var(--win);color:#000;font:inherit;cursor:pointer}
+.welcome button:active{border-style:inset}
+.welcome button:focus-visible{outline:1px dotted #000;outline-offset:-5px}
 .tag2{margin:8px 0 0;font-size:clamp(20px,2.6vw,28px);font-weight:700;color:var(--ink2)}
 .deco{display:flex;justify-content:center;gap:18px;margin:26px 0 6px}
 .heart{width:30px;height:28px;image-rendering:pixelated;animation:beat 1s steps(2) infinite}
@@ -139,25 +142,17 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
 .board td{border:1px solid #bbb}
 .board .bh td{background:#000080;color:#fff;font-weight:bold}
 .board .pin td{background:#ffffcc}
-.thread{width:92%;margin:10px auto;text-align:left;background:#fff;border:2px inset #ccc;padding:10px;font-family:"Times New Roman",serif;font-size:15px}
-.post{border-bottom:1px dashed #999;padding:6px 0 10px;margin-bottom:8px}
-.thread textarea{width:100%;font:14px "Courier New",monospace}
-.b95{margin-top:6px;font:13px Tahoma,sans-serif;background:#c0c0c0;border:2px outset #fff;padding:3px 14px;cursor:pointer}
 .cam{position:fixed;right:18px;bottom:52px;width:180px;border-radius:14px;overflow:hidden;z-index:50;background:rgba(255,255,255,.6);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 10px 30px rgba(0,0,0,.25);font:500 11px Inter,sans-serif;color:#121316}
 .cam video{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;transform:scaleX(-1);background:#222}
 .cam .s{padding:6px 10px;display:flex;align-items:center;gap:6px}
 .cam .s i{width:7px;height:7px;border-radius:50%;background:#e0483e}
-.dlg{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.25);z-index:60}
-.dlg.on{display:grid}
-.win{width:min(420px,92vw);background:#c0c0c0;border:2px outset #fff;font:13px Tahoma,sans-serif}
-.win .tt{background:#000080;color:#fff;padding:3px 6px;font-weight:bold}
-.win .tx{margin:8px;height:150px;overflow:auto;background:#fff;border:2px inset #ccc;padding:8px;font-size:12px;line-height:1.5}
-.win .ft{margin:0 8px 8px;display:flex;justify-content:space-between;align-items:center}
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
 <script src="visitor.js" defer></script>
+<link rel="stylesheet" href="flow.css">
+<script src="flow.js"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -171,7 +166,7 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
   </filter>
 </svg>
 
-<div id="crt">
+<div id="crt" inert aria-hidden="true">
 <div class="window out">
   <div class="titlebar"><span class="ico">N</span><span class="t" lang="en" data-i18n="retro.neverland_navigator">Neverland - Navigator</span>
     <span class="btns"><span class="out">_</span><span class="out">□</span><span class="out">×</span></span></div>
@@ -221,18 +216,11 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
 
       <table class="board" cellpadding="6">
         <tr class="bh"><td data-i18n="forum.topic">Topic</td><td data-i18n="forum.from">From</td><td data-i18n="forum.replies">Replies</td></tr>
-        <tr class="pin"><td><a href="#t1" id="open" data-i18n="forum.pinned">&#128204; does anyone remember the first time u went out alone as a kid??</a></td><td>marigold_77</td><td id="rc">0</td></tr>
+        <tr class="pin"><td><a href="#" data-i18n="forum.pinned">&#128204; does anyone remember the first time u went out alone as a kid??</a></td><td>marigold_77</td><td>0</td></tr>
         <tr><td><a href="#" data-i18n="forum.cat">my cat learned to open the fridge. send help</a></td><td>tofu.jpg</td><td>12</td></tr>
         <tr><td><a href="#" data-i18n="forum.letters">is it weird that i still write letters</a></td><td>pen_pal</td><td>4</td></tr>
         <tr><td><a href="#" data-i18n="forum.diary">found my old diary from 2031 lol</a></td><td>xX_june_Xx</td><td>7</td></tr>
       </table>
-
-      <div class="thread" id="t1" hidden>
-        <div class="post"><b>marigold_77</b> <span data-i18n="forum.wrote">wrote:</span><br><span data-i18n="forum.memory">does anyone remember the first time u went out alone as a kid?? i was 8 and i bought bread and felt like a spy. nobody replies here anymore :(</span></div>
-        <div id="replies"></div>
-        <textarea id="txt" rows="3" placeholder="Write a reply..." data-i18n-placeholder="forum.replyPlaceholder"></textarea><br>
-        <button type="button" id="post" class="b95" data-i18n="forum.postReply">Post Reply</button>
-      </div>
 
       <div class="foot">
         <span data-i18n="retro.visitor">You are visitor No.</span> <span class="counter" id="counter">------</span><br>
@@ -354,32 +342,50 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
   clock();setInterval(clock,30000);
 })();
 </script>
-<div class="cam" aria-label="Your camera" data-i18n-aria-label="forum.yourCamera"><video id="cv" playsinline muted autoplay></video><div class="s"><i></i><span data-i18n="forum.live">Presence check · live</span></div></div>
-<div class="welcome" id="welcome" role="dialog" aria-labelledby="wt"><div class="win out"><div class="titlebar"><span class="t">Neverland</span></div><div class="bd"><h2 id="wt" lang="en" data-i18n="forum.wTitle">WELCOME!</h2><div id="wbody"></div><div class="share" data-i18n="forum.wShare"></div><div class="sorry" data-i18n="forum.wSorry"></div></div></div></div>
-<div class="dlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dt">
-  <div class="win"><div class="tt" id="dt" data-i18n="forum.declaration">No-AI Content Declaration</div>
-    <div class="tx" id="terms"><span data-i18n="forum.terms">PLACEHOLDER. By posting on Neverland you declare that every word of this reply was typed by your own hand, that no agent, assistant, autocomplete or language model was consulted, suggested, or present in the room...</span><br><br><span id="sections"></span><br><br><span data-i18n="forum.end">End of declaration.</span></div>
-    <div class="ft"><label><input type="checkbox" id="agree" disabled> <span data-i18n="forum.agree">I declare this reply is human-made</span></label><button type="button" class="b95" id="ok" disabled data-i18n="forum.post">Post</button></div>
+<div class="cam" id="camera" hidden aria-hidden="true"><video playsinline muted autoplay></video><div class="s"><i></i><span data-i18n="forum.live">Presence check · live</span></div></div>
+<div class="welcome" role="dialog" aria-modal="true" aria-labelledby="wt" aria-describedby="wbody wshare wsorry">
+  <div class="win out">
+    <div class="titlebar"><span class="t">Neverland</span></div>
+    <div class="bd">
+      <h2 id="wt" data-i18n="forum.wTitle">You're in!</h2>
+      <div id="wbody"></div>
+      <div id="wshare" class="share" data-i18n="forum.wShare"></div>
+      <div id="wsorry" class="sorry" data-i18n="forum.wSorry"></div>
+      <div class="actions" id="responses" lang="en">
+        <button class="out" type="button" autofocus>Accept</button>
+        <button class="out" type="button">Oh...</button>
+      </div>
+    </div>
   </div>
 </div>
 <script>
-(function(){
-  var $=function(id){return document.getElementById(id)};
-  i18n.apply(document);
-  setTimeout(function(){$('welcome').classList.add('gone');}, 9000);
-  $('welcome').onclick=function(){this.classList.add('gone');};
-  $('sections').textContent = (t('forum.section') + ' ').repeat(60);
-  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){navigator.mediaDevices.getUserMedia({video:true}).then(function(st){$('cv').srcObject=st;}).catch(function(){});}
-  $('open').onclick=function(e){e.preventDefault();$('t1').hidden=false;$('txt').focus();};
-  $('post').onclick=function(){if(!$('txt').value.trim())return;$('dlg').classList.add('on');$('terms').scrollTop=0;};
-  $('terms').onscroll=function(){var t=$('terms');if(t.scrollTop+t.clientHeight>=t.scrollHeight-4)$('agree').disabled=false;};
-  $('agree').onchange=function(){$('ok').disabled=!this.checked;};
-  $('ok').onclick=function(){
-    var d=document.createElement('div');d.className='post';d.innerHTML=t('forum.replyAuthor', {n: document.getElementById('counter').textContent});d.appendChild(document.createTextNode($('txt').value));
-    $('replies').appendChild(d);$('txt').value='';$('rc').textContent='1';$('dlg').classList.remove('on');$('agree').checked=false;$('agree').disabled=true;$('ok').disabled=true;
-  };
-})();
+i18n.apply(document);
+
+const camera = document.getElementById('camera');
+const video = camera.querySelector('video');
+async function showExistingCamera() {
+  try {
+    const permission = await navigator.permissions.query({name: 'camera'});
+    if (permission.state !== 'granted') return;
+    video.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
+    camera.hidden = false;
+  } catch { /* The welcome dialog also works without a camera preview. */ }
+}
+showExistingCamera();
+
+let fade;
+document.getElementById('responses').addEventListener('click', event => {
+  if (!event.target.closest('button') || fade) return;
+  const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1500;
+  fade = document.body.animate([{opacity: 1}, {opacity: 0}], {duration, easing: 'ease-in-out', fill: 'forwards'});
+  fade.onfinish = flowNext;
+});
+window.addEventListener('pageshow', event => {
+  if (event.persisted && fade) {
+    fade.cancel();
+    fade = null;
+  }
+});
 </script>
-<script src="flow.js"></script>
 </body>
 </html>

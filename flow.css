@@ -1,0 +1,32 @@
+/* One sheet of blue stays over the viewport until the next document is ready. */
+.gate-wash {
+  position: fixed;
+  inset: -2px;
+  z-index: 2147483647;
+  background: #739fce;
+  pointer-events: auto;
+}
+.gate-wash:has(.gate-wash-status) {
+  display: grid;
+  place-items: center;
+}
+.gate-wash-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #10283c;
+  font: 500 17px/1.5 Inter, -apple-system, sans-serif;
+}
+.gate-wash-status::before {
+  content: "";
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgb(16 40 60 / 22%);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: gate-wait-turn 900ms linear infinite;
+}
+@keyframes gate-wait-turn { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .gate-wash-status::before { display: none; }
+}

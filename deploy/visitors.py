@@ -12,7 +12,6 @@ import time
 from urllib.parse import urlsplit
 
 API = "/api/visitor"
-ANSWERS = ["human", "agent", "human"]
 COOKIE = "neverland-pass"
 TOKEN = re.compile(r"[0-9a-f]{32}")
 
@@ -28,38 +27,22 @@ def membership(db, key):
     return {"number": row[0], "verified": time.time() < row[1] + 86400}
 
 
-def certify(db, key, action, data):
+def certify(db, key, data):
+    # Both Stage 3 recordings must meet the same voiced-frame minimum as the client.
+    frames = data.get("voicedFrames")
+    if not isinstance(frames, list) or len(frames) != 2 or any(type(n) is not int or n < 6 for n in frames):
+        raise ValueError
     # Serialize the decision and allocation, including retries after a lost response.
     db.execute("BEGIN IMMEDIATE")
     existing = membership(db, key)
     if existing["verified"]:
         return existing
-    if action == "jury":
-        if data.get("answers") != ANSWERS:
-            answers = data.get("answers")
-            if not isinstance(answers, list) or len(answers) != 3 or any(a not in ("human", "agent") for a in answers):
-                raise ValueError
-            db.execute("INSERT OR IGNORE INTO pending VALUES (?, 0)", (key,))
-            votes = db.execute("SELECT votes FROM pending WHERE browser = ?", (key,)).fetchone()[0]
-            return {"votes": votes}
-    elif action == "vouch":
-        step = data.get("step")
-        row = db.execute("SELECT votes FROM pending WHERE browser = ?", (key,)).fetchone()
-        if not row or type(step) is not int or not 1 <= step <= row[0] + 1:
-            raise ValueError
-        votes = max(step, row[0])
-        if votes < 3:
-            db.execute("UPDATE pending SET votes = ? WHERE browser = ?", (votes, key))
-            return {"votes": votes}
-    else:
-        raise ValueError
     now = int(time.time())
     if existing["number"] is None:
         assigned = db.execute("INSERT INTO visitors(browser, verified_at) VALUES (?, ?)", (key, now)).lastrowid
     else:
         assigned = existing["number"]
         db.execute("UPDATE visitors SET verified_at = ? WHERE number = ?", (now, assigned))
-    db.execute("DELETE FROM pending WHERE browser = ?", (key,))
     return {"number": assigned}
 
 
@@ -88,6 +71,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
+        if self.server.preview and path == "/jury.html":
+            self.send_response(302)
+            self.send_header("Location", "/stage3.html" + ("?" + urlsplit(self.path).query if urlsplit(self.path).query else ""))
+            self.end_headers()
+            return
         if path in (API, API + "/check") or self.server.preview and path in ("/pass.html", "/forum.html"):
             secret = self.cookie()
             with closing(sqlite3.connect(self.server.db)) as db:
@@ -110,7 +98,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
-        if path not in (API + "/jury", API + "/vouch"):
+        if path != API + "/complete":
             return self.reply(404)
         origin = self.headers.get("Origin", "")
         allowed = f"http://127.0.0.1:{self.server.server_port}" if self.server.preview else "https://portal.ariari.art"
@@ -127,7 +115,7 @@ class Handler(SimpleHTTPRequestHandler):
             if not isinstance(secret, str) or not TOKEN.fullmatch(secret):
                 raise ValueError
             with closing(sqlite3.connect(self.server.db, timeout=10)) as db, db:
-                result = certify(db, identity(secret), path.rsplit("/", 1)[1], data)
+                result = certify(db, identity(secret), data)
         except (ValueError, UnicodeError):
             return self.reply(400)
         except sqlite3.Error:
@@ -146,7 +134,6 @@ if __name__ == "__main__":
     with closing(sqlite3.connect(args.db)) as db, db:
         db.executescript("""
             CREATE TABLE IF NOT EXISTS visitors(number INTEGER PRIMARY KEY, browser TEXT NOT NULL UNIQUE, verified_at INTEGER NOT NULL);
-            CREATE TABLE IF NOT EXISTS pending(browser TEXT PRIMARY KEY, votes INTEGER NOT NULL);
         """)
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     server.db, server.preview = args.db, args.preview

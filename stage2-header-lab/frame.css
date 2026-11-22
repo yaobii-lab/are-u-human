@@ -1,0 +1,11 @@
+/* Keep the live game intact. Only the colored question band belongs to this experiment. */
+.band{position:relative;background:var(--paper);color:var(--ink-main)}
+.band small,.band p{color:var(--ink-note);opacity:1}
+.band h2 mark{color:inherit;box-shadow:none}
+body[data-treatment=copy] .band{box-shadow:inset 0 -1px var(--ink-note),inset 0 -3px var(--paper),inset 0 -4px color-mix(in srgb,var(--ink-note) 40%,var(--paper))}
+body[data-treatment=copy] mark{text-decoration:underline double;text-underline-offset:.12em;text-decoration-color:var(--ink-note);text-decoration-thickness:1px}
+body[data-treatment=protocol] .band small{font-variant-numeric:tabular-nums}
+body[data-treatment=protocol] .band small::before{content:"[ ";font-family:monospace}
+body[data-treatment=protocol] .band small::after{content:" ]";font-family:monospace}
+body[data-treatment=desk] .band::before{content:"";position:absolute;top:19px;left:9px;width:2px;height:12px;background:var(--ink-note);transform:rotate(6deg)}
+body[data-treatment=desk] .band p{font-family:"Kaiti SC","STKaiti","KaiTi",Georgia,serif;font-size:15px;line-height:1.2}

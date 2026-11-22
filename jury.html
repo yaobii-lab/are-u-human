@@ -53,6 +53,7 @@
     <button type="button" id="vouch" hidden data-i18n="jury.vouch">I vouch this person is human</button>
   </div>
 </div>
+<script src="eyes.js" data-scene="jury" data-mount=".phone" data-initial="doubt"></script>
 <script>i18n.apply(document);</script>
 <script src="visitor.js"></script>
 <script src="flow.js"></script>
@@ -69,6 +70,7 @@ M.forEach((m,i)=>{
   const c=document.createElement('div');c.className='card';c.id='c'+i;
   c.innerHTML=`<div class="src">${t('jury.sample', {n: i+1})}</div><p>${m.text}</p><div class="seg" role="group" aria-label="${t('jury.sample', {n: i+1})}"><button type="button" data-v="human" aria-pressed="false">${t('jury.human')}</button><button type="button" data-v="agent" aria-pressed="false">${t('jury.agent')}</button></div>`;
   c.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    Eyes.set('doubt');Eyes.lookAt(c);
     pick[i]=b.dataset.v;c.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
     $('submit').disabled=Object.keys(pick).length<M.length;
   });
@@ -98,11 +100,11 @@ $('submit').onclick = async () => {
   if (!result) { buttons.forEach(button => button.disabled = false); return; }
   M.forEach((m,i)=>{const c=$('c'+i);c.classList.add('reveal',m.who==='human'?'hu':'ag');c.querySelector('.src').textContent=m.src+' · '+(m.who==='human'?t('jury.human'):t('jury.agent'));});
   if (result.number) {
-
+    Eyes.set('pass');
     setTimeout(flowNext, 2600);
     return;
   }
-
+  Eyes.set('cold');
   showVotes(result.votes);
   setTimeout(() => {
     $('ask').style.display = 'none';
@@ -117,7 +119,7 @@ $('vouch').onclick = async () => {
   if (!result) return;
   showVotes(result.number ? 3 : result.votes);
   if (result.number) {
-
+    Eyes.set('pass');
     setTimeout(flowNext, 1200);
   } else {
     $('vouch').disabled = false;

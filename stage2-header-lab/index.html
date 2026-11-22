@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>直觉题面 · Stage 2</title>
+<link rel="icon" href="../assets/img/logo.png">
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f7f7f3;color:#232922;font-family:var(--font-body)}
+main{max-width:1420px;margin:auto;padding:34px clamp(16px,4vw,70px) 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #c7cbc1;padding:0 0 22px}
+h1{margin:0;font-size:clamp(23px,2.3vw,34px);letter-spacing:-.04em;line-height:1.1}
+h1 small{display:block;font-size:13px;letter-spacing:.02em;font-weight:500;color:#555d54;margin-bottom:9px}
+.controls{display:flex;gap:6px;flex-wrap:wrap}
+button,select{height:42px;border:1px solid #bac2b7;border-radius:4px;background:#fff;color:inherit;padding:0 13px;font:500 14px/1 var(--font-body);cursor:pointer}
+button:hover,select:hover{border-color:#596755}
+button:focus-visible,select:focus-visible{outline:3px solid #2c6378;outline-offset:2px}
+button:disabled{opacity:.45;cursor:wait}
+.panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(12px,2vw,28px);margin-top:24px}
+.panels.single{grid-template-columns:minmax(0,440px);justify-content:center}
+article[hidden]{display:none}
+h2{font-size:20px;line-height:1.45;letter-spacing:-.025em;margin:0 0 4px;font-weight:650}
+article>p{margin:0 0 14px;font-size:13px;line-height:1.5;color:#565e54}
+iframe{display:block;border:1px solid #d8dcd3;border-radius:4px;width:100%;height:570px;background:white}
+#status{font-size:14px;line-height:1.5}
+@media(max-width:940px){main{padding:20px 16px 30px}.panels{grid-template-columns:minmax(0,480px);justify-content:center}.panels.single{grid-template-columns:minmax(0,480px)}header{flex-wrap:wrap}.controls{gap:5px}button,select{height:44px;padding-inline:10px}iframe{height:535px}}
+@media(max-width:430px){main{padding-inline:12px}.panels{margin-top:18px}header{gap:12px;padding-bottom:14px}article>p{margin-bottom:8px}h1 small{margin-bottom:5px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1><small>Human Verification Portal · Stage 2</small>直觉题面</h1>
+<div class="controls">
+<select id="view" aria-label="选择要看的版本"><option value="all">三版对照</option><option value="copy">复写层</option><option value="protocol">网管规约</option><option value="desk">桌角交接</option></select>
+<button type="button" id="color" disabled>换一组颜色</button>
+<button type="button" id="question" disabled>换一道题</button>
+</div>
+</header>
+<p id="status" role="status">正在打开题面…</p>
+<div id="panels" class="panels"></div>
+</main>
+<script src="lab.js"></script>
+</body>
+</html>

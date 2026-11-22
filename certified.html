@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="assets/img/logo.png">
+<title data-i18n="certified.title">Human verified</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="assets/fonts/portal/fonts.css">
+<link rel="stylesheet" href="flow.css">
+<script src="flow.js"></script>
+<script src="i18n/messages.js"></script>
+<script src="i18n.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#e6e8e9;color:var(--ink);font-family:Inter,PortalSans,sans-serif}
+main{min-height:100svh;padding:32px 20px;display:grid;place-content:center;justify-items:center;text-align:center}
+img{width:64px;height:64px}
+h1{font-size:clamp(30px,5.5vw,58px);line-height:1.15;letter-spacing:-.045em;margin:24px 0 36px}
+button{min-height:48px;padding:0 28px;background:var(--brand-600);color:white;border:0;border-radius:99px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer}
+button:hover{background:var(--brand-700)}
+button:focus-visible{outline:3px solid var(--brand-600);outline-offset:4px}
+</style>
+</head>
+<body>
+<main>
+  <img src="assets/svg/dot/check-circle.svg" alt="">
+  <h1 data-i18n="certified.title">Human verified</h1>
+  <button type="button" onclick="flowNext()" data-i18n="certified.collect">Collect your pass</button>
+</main>
+<script>i18n.apply(document);</script>
+</body>
+</html>

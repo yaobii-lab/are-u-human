@@ -2,34 +2,317 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="icon" href="assets/img/logo.png">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="assets/img/logo.png">
 <title lang="en" data-i18n="credits.title">are u human</title>
-<!-- 9 · 结语，占位。内容见 docs/SCRIPT.md -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/fonts/portal/fonts.css">
+<link rel="preload" href="assets/fonts/epilogue-hand.ttf" as="font" type="font/ttf" crossorigin>
 <style>
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:16px;background:#0d0e10;color:#e9e9e6;font:400 16px/1.6 Inter,sans-serif;text-align:center}
-main{width:min(520px,100%);display:flex;flex-direction:column;gap:18px;opacity:0;animation:in 2.4s .4s ease forwards}
-h1{margin:0 0 12px;font-weight:600;font-size:28px;letter-spacing:.02em}
-p{margin:0;color:#a6a6a1}
-.thanks{margin-top:24px;color:#e9e9e6}
-audio{color-scheme:dark;align-self:center;width:min(280px,100%);margin-top:12px}
-@keyframes in{to{opacity:1}}
-@media (prefers-reduced-motion:reduce){main{animation:none;opacity:1}}
+@font-face{font-family:EpilogueHand;src:url(assets/fonts/epilogue-hand.ttf) format("truetype");font-display:swap}
+*{box-sizing:border-box}
+html{background:#000;color-scheme:dark}
+body{--side:clamp(32px,7vw,88px);--foot:clamp(24px,5svh,52px);--paper:#eeeae3;--serif:Georgia,'Songti SC','Noto Serif CJK SC',SimSun,serif;--sans:Inter,system-ui,sans-serif;margin:0;background:#000;color:var(--paper);font-family:var(--serif)}
+main{width:min(42rem,calc(100% - 2 * var(--side)));margin:auto;padding:clamp(68px,11svh,132px) 0 0;opacity:0;visibility:hidden;transition:opacity 2.8s ease-in-out}
+body.reading main,body.reading .production{opacity:1;visibility:visible}
+main header{text-align:center;font-family:EpilogueHand,cursive;margin-bottom:clamp(32px,4vw,56px)}
+h1,p,blockquote{margin:0}
+h1{font-size:clamp(50px,5.3vw,76px);line-height:1.08;font-weight:400;letter-spacing:0}
+html:lang(zh) h1{letter-spacing:.035em}
+.subtitle{margin-top:5px;font-size:clamp(23px,2.2vw,31px);line-height:1.15;color:#c9c5be}
+.copy{font-size:clamp(17px,1.38vw,20px);line-height:1.62;color:#d5d1ca;overflow-wrap:break-word}
+html:lang(zh) .copy{line-height:1.92;line-break:strict}
+.copy p+p:not(.refrain){margin-top:1.05em}
+.refrain{margin:1.15em 0;color:var(--paper);font-size:clamp(28px,3.1vw,44px);line-height:1.14;letter-spacing:-.035em}
+.refrain span{display:block}
+blockquote{max-width:28em;margin-top:1.55em;color:var(--paper);font-size:clamp(22px,2.15vw,30px);line-height:1.45;text-wrap:balance}
+html:lang(en) blockquote{font-style:italic}
+.production{width:min(100%,40rem);margin:0 auto;padding:clamp(80px,12vh,140px) var(--side) calc(110px + var(--foot));opacity:0;visibility:hidden;text-align:center}
+.production h2{margin:0 0 22px;font:500 13px/1.5 var(--sans);letter-spacing:.14em;color:#b8b4ad}
+.production ul{list-style:none;margin:0;padding:0;font-size:clamp(25px,3.1vw,42px);line-height:1.27;letter-spacing:-.025em}
+.thanks{margin:28px auto 0;max-width:37ch;font-size:16px;line-height:1.65;color:#c5c1ba;text-wrap:balance}
+html:lang(zh) .thanks{max-width:23em}
+body.rolling{padding-bottom:var(--production-height)}
+body.rolling .production{position:fixed;inset:0;margin:auto;height:fit-content;padding:0 var(--side);pointer-events:none}
+
+#roll{position:fixed;inset:0;z-index:1;border:0;background:none;color:#aaa7a1;touch-action:pinch-zoom;user-select:none;-webkit-touch-callout:none;cursor:pointer}
+#roll span{position:absolute;left:max(var(--side),env(safe-area-inset-left));bottom:calc(max(var(--foot),env(safe-area-inset-bottom)) + 12px);font:400 12px/1.55 system-ui,sans-serif}
+#roll:focus-visible{outline:0}
+#roll:focus-visible span{text-decoration:underline}
+footer{z-index:2;background:#000;justify-content:flex-end;padding:0 max(var(--side),env(safe-area-inset-right)) max(var(--foot),env(safe-area-inset-bottom)) var(--side)}
+@media(max-width:760px){#roll span{bottom:calc(max(var(--foot),env(safe-area-inset-bottom)) + 58px)}}
+footer{position:fixed;inset:auto 0 0;display:flex;align-items:center;gap:5px;color:#aaa7a1;pointer-events:none}
+#sound{pointer-events:auto}
+body.rolling footer{background:transparent}
+.sound-credit{font:400 12px/1.55 system-ui,sans-serif;text-align:right;text-wrap:balance}
+.sound-credit i{white-space:nowrap}
+#sound{flex:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;background:none;color:inherit;cursor:pointer}
+#sound:hover{color:#fff}
+#sound:focus-visible{outline:1px solid currentColor;outline-offset:-4px}
+#sound svg{width:18px;height:18px}
+#sound svg,footer[hidden],.sound-credit[hidden]{display:none}
+#sound[data-mode="play"] .play,#sound[data-mode="mute"] .speaker,#sound[data-mode="unmute"] .muted{display:block}
+@media(prefers-reduced-motion:reduce){main{transition:none}}
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
 </head>
-<body>
-<main>
-  <h1 lang="en" data-i18n="credits.title">are u human</h1>
-  <p data-i18n="credits.note"></p>
-  <p data-i18n="credits.team"></p>
-  <p data-i18n="credits.line"></p>
-  <p class="thanks" data-i18n="credits.thanks"></p>
-  <audio controls autoplay preload="auto" src="assets/audio/credits.mp3" aria-label="Chasing Fireflies / Never Fly Away"></audio>
+<body class="reading">
+<main aria-label="Epilogue" data-i18n-aria-label="credits.label">
+  <header>
+    <h1 data-i18n="credits.label"></h1>
+    <p class="subtitle" lang="en" data-i18n="credits.kicker"></p>
+  </header>
+  <div class="copy">
+    <p data-i18n="credits.note"></p>
+    <p data-i18n="credits.world"></p>
+    <p data-i18n="credits.experiment"></p>
+    <p data-i18n="credits.friction"></p>
+    <p class="refrain" lang="en"><span>The Test Can't Tell.</span> <span>But You Still Have to Pass.</span></p>
+    <p data-i18n="credits.last"></p>
+    <blockquote data-i18n="credits.line"></blockquote>
+  </div>
 </main>
-<script>i18n.apply(document);</script>
+  <section class="production" aria-labelledby="production-title">
+    <h2 id="production-title"><span lang="en">PRODUCTION</span></h2>
+    <ul lang="en">
+      <li>Yibo Yan</li>
+      <li>Mengxuan Ge</li>
+      <li>Yinuo Wang</li>
+      <li>Yutong Lin</li>
+    </ul>
+    <p class="thanks" data-i18n="credits.thanks"></p>
+  </section>
+<button id="roll" type="button" hidden><span></span></button>
+<audio preload="auto" src="assets/audio/credits.mp3"></audio>
+<footer hidden>
+  <span class="sound-credit" hidden><span data-i18n="credits.nowPlaying"></span> 《<span id="track">Chasing Fireflies</span>》 <span lang="en">from Musical <i>Maybe Happy Ending</i></span></span>
+  <button id="sound" type="button" data-mode="play" data-i18n-aria-label="credits.play">
+    <svg class="play" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.8v14.4L19 12z"/></svg>
+    <svg class="speaker" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h4l5-4v14l-5-4H3zM16 8.5a5 5 0 0 1 0 7M19 6a9 9 0 0 1 0 12"/></svg>
+    <svg class="muted" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h4l5-4v14l-5-4H3zM16 9l6 6m0-6-6 6"/></svg>
+  </button>
+</footer>
+<script>
+i18n.apply(document);
+const music = document.querySelector('audio');
+const footer = document.querySelector('footer');
+const credit = document.querySelector('.sound-credit');
+const track = document.getElementById('track');
+const sound = document.getElementById('sound');
+const secondTrackAt = 87.154;
+
+function updateControl(){
+  const mode = music.paused ? 'play' : music.muted ? 'unmute' : 'mute';
+  sound.dataset.mode = mode;
+  sound.title = t('credits.' + mode);
+  sound.setAttribute('aria-label', sound.title);
+  credit.hidden = music.paused;
+}
+const epilogue = document.querySelector('main');
+const production = document.querySelector('.production');
+const roll = document.getElementById('roll');
+const hint = roll.querySelector('span');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rollDuration = 18000;
+let timeline = null;
+let position = 0;
+let speed = 0;
+let frame;
+let previousTime;
+
+function paint(){
+  timeline.forEach(animation => { animation.currentTime = position; });
+  epilogue.inert = position >= 1600;
+  production.inert = position < 1900;
+}
+function move(timestamp){
+  if(previousTime !== undefined){
+    position = Math.max(0, Math.min(rollDuration, position + (timestamp - previousTime) * speed));
+  }
+  previousTime = timestamp;
+  paint();
+  if((position === rollDuration && speed > 0) || (position === 0 && speed < 0)) setSpeed(0);
+  else frame = requestAnimationFrame(move);
+}
+function setSpeed(value){
+  cancelAnimationFrame(frame);
+  speed = value;
+  previousTime = undefined;
+  hint.textContent = t(value < 0 ? 'credits.rewinding' : value > 0 ? 'credits.hold' : 'credits.resume');
+  if(value) frame = requestAnimationFrame(move);
+}
+function startRoll(){
+  stopReadingScroll();
+  document.body.style.setProperty('--production-height', production.offsetHeight + 'px');
+  document.body.classList.add('rolling');
+  const timing = {duration:rollDuration, fill:'both'};
+  timeline = [
+    epilogue.animate([{opacity:1}, {opacity:0,offset:1600/rollDuration}, {opacity:0}],timing),
+    production.animate([
+      {opacity:0,transform:'translateY(20svh)'},
+      {opacity:0,transform:'translateY(20svh)',offset:1900/rollDuration},
+      {opacity:1,transform:'translateY(16svh)',offset:4300/rollDuration},
+      {opacity:1,transform:'translateY(0)'}
+    ],timing)
+  ];
+  timeline.forEach(animation => animation.pause());
+  roll.hidden = false;
+  position = reducedMotion ? rollDuration : 0;
+  paint();
+  setSpeed(reducedMotion ? 0 : 1);
+}
+function toggleRoll(){
+  if(speed){ setSpeed(0); return; }
+  if(position === rollDuration) position = 0;
+  setSpeed(1);
+}
+let gesture;
+function finishGesture(){
+  if(!gesture) return;
+  clearTimeout(gesture.timer);
+  const tapped = !gesture.held && !gesture.dragged;
+  gesture = null;
+  setSpeed(0);
+  return tapped;
+}
+roll.addEventListener('pointerdown', event => {
+  if(!event.isPrimary || event.button !== 0) return;
+  roll.setPointerCapture(event.pointerId);
+  gesture = {y:event.clientY, position, speed};
+  gesture.timer = setTimeout(() => { gesture.held = true; setSpeed(-4); }, 350);
+});
+roll.addEventListener('pointermove', event => {
+  if(!gesture || !event.isPrimary) return;
+  const distance = gesture.y - event.clientY;
+  if(!gesture.dragged && Math.abs(distance) < 8) return;
+  gesture.dragged = true;
+  clearTimeout(gesture.timer);
+  setSpeed(0);
+  position = Math.max(0, Math.min(rollDuration, gesture.position + distance * rollDuration / innerHeight));
+  paint();
+});
+roll.addEventListener('pointerup', event => {
+  if(!gesture || !event.isPrimary) return;
+  const wasMoving = gesture.speed !== 0;
+  if(finishGesture() && !wasMoving) toggleRoll();
+});
+roll.addEventListener('lostpointercapture', finishGesture);
+roll.addEventListener('click', event => { if(event.detail === 0) toggleRoll(); });
+roll.addEventListener('wheel', event => {
+  if(event.ctrlKey || !event.deltaY) return;
+  event.preventDefault();
+  setSpeed(0);
+  const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerHeight : 1);
+  position = Math.max(0, Math.min(rollDuration, position + pixels * rollDuration / innerHeight));
+  paint();
+},{passive:false});
+// Let readers finish the note on short screens before the soundtrack starts the roll.
+const rehearsal = new URLSearchParams(location.search).get('preview') === 'transition';
+// Keep a fractional position so the reading speed is independent of the display refresh rate.
+const openingHoldMs = 5000;
+const readingPixelsPerSecond = 18;
+let readingFrame;
+function startReadingScroll(){
+  let elapsed = 0;
+  let lastTime = performance.now();
+  let offset = window.scrollY;
+  function advance(now){
+    const delta = document.hidden ? 0 : Math.min(now - lastTime, 100);
+    lastTime = now;
+    const previousElapsed = elapsed;
+    elapsed += delta;
+    if(elapsed > openingHoldMs){
+      const movingMs = elapsed - Math.max(previousElapsed, openingHoldMs);
+      const documentEnd = document.scrollingElement.scrollHeight - innerHeight;
+      // With music, leave the closing line on screen until the production roll takes over.
+      const limit = music.paused ? documentEnd : Math.min(documentEnd, epilogue.offsetTop + epilogue.offsetHeight - innerHeight * 0.65);
+      if(offset < limit){
+        offset = Math.min(limit, offset + readingPixelsPerSecond * movingMs / 1000);
+        window.scrollTo(0, offset);
+      }
+      if(offset >= documentEnd) return;
+    }
+    readingFrame = requestAnimationFrame(advance);
+  }
+  readingFrame = requestAnimationFrame(advance);
+}
+function stopReadingScroll(){ cancelAnimationFrame(readingFrame); }
+window.addEventListener('wheel', stopReadingScroll, {passive:true, once:true});
+window.addEventListener('pointerdown', event => {
+  if(!event.target.closest('footer')) stopReadingScroll();
+}, {passive:true});
+window.addEventListener('keydown', event => {
+  if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key)) stopReadingScroll();
+});
+let reachedClosing = false;
+new IntersectionObserver(([entry]) => {
+  if (entry.intersectionRatio >= 0.8) {
+    reachedClosing = true;
+    followMusic();
+  }
+}, {threshold: 0.8}).observe(document.querySelector('blockquote'));
+
+function followMusic(){
+  if(music.currentTime >= 4){
+    document.body.classList.add('reading');
+    footer.hidden = false;
+  }
+  const title = music.currentTime < secondTrackAt ? 'Chasing Fireflies' : 'Never Fly Away';
+  if(track.textContent !== title) track.textContent = title;
+  if(music.currentTime >= secondTrackAt && !timeline && (rehearsal || reachedClosing)) startRoll();
+  if(music.currentTime < secondTrackAt && timeline){
+    setSpeed(0);
+    timeline.forEach(animation => animation.cancel());
+    timeline = null;
+    roll.hidden = true;
+    epilogue.inert = false;
+    production.inert = false;
+    document.body.classList.remove('rolling');
+  }
+}
+function unavailable(){
+  document.body.classList.add('reading');
+  footer.hidden = true;
+}
+function begin(){
+  music.play().catch(error => {
+    if(error.name === 'NotAllowedError'){
+      document.body.classList.add('reading');
+      footer.hidden = false;
+      updateControl();
+    }else unavailable();
+  });
+}
+sound.addEventListener('click', () => {
+  if(music.paused){
+    music.muted = false;
+    begin();
+  }else music.muted = !music.muted;
+});
+music.addEventListener('playing', () => {
+  footer.hidden = !document.body.classList.contains('reading');
+  updateControl();
+});
+for(const event of ['pause','ended','volumechange']) music.addEventListener(event, updateControl);
+music.addEventListener('timeupdate', followMusic);
+music.addEventListener('error', unavailable);
+async function previewTransition(){
+  // The rehearsal server serves whole files. A local blob is seekable from the first play.
+  const response = await fetch(music.src);
+  if(!response.ok) throw new Error('Soundtrack unavailable');
+  const blob = await response.blob();
+  music.addEventListener('loadedmetadata', () => {
+    music.currentTime = secondTrackAt - 5;
+    begin();
+  }, {once:true});
+  music.src = URL.createObjectURL(blob);
+}
+if(rehearsal) previewTransition().catch(unavailable);
+else {
+  begin();
+  if(!reducedMotion) startReadingScroll();
+}
+</script>
 <script src="flow.js"></script>
 </body>
 </html>

@@ -5,11 +5,9 @@
 <link rel="icon" href="assets/img/logo.png">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-i18n="voice.title">Human Verification Portal | Voice</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="tokens.css">
 <style>
-/* Stage 3 · Voice. Two looks on one flow, picked with ?v=call | ?v=form:
+/* Stage 3 · Voice. The default light field and two review looks share one flow:
    call = Gate phones you, an automated voice line gives instructions;
    form = a printed voiceprint check form that gets a red stamp.
    Round 1: read it in a described tone, always rejected (too flat = TTS, too much = acting).
@@ -125,15 +123,130 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
 .v-form #go.stop{background:var(--bad)}
 .v-form .golb{display:none}
 
+/* per-syllable chart: polite up, impatient down; solid = measured, hatched = inferred, dashed = target */
+.chart{display:none}
+.v-orb .chart{display:block;width:min(360px,100%);margin:14px auto 0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.readout{display:grid;grid-template-columns:4.2em repeat(5,1fr);align-items:center;row-gap:2px;margin-top:2px;
+ font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--gray-700);font-variant-numeric:tabular-nums;text-align:center}
+.readout b{font:500 11px var(--font-body);text-align:left;white-space:nowrap}
+.readout .ch{font:600 16px var(--font-body);color:var(--brand-900);padding:2px 0 3px}
+.readout .ch.on{color:var(--brand-600);text-decoration:underline 2px;text-underline-offset:5px}
+.readout .ch.worst{color:var(--danger)}
+
+/* voiceprint probe: flashes while you speak, locks when you let go */
+.probe{display:none}
+.v-orb .probe{display:flex;width:max-content;white-space:nowrap;position:absolute;z-index:1;left:50%;top:70%;transform:translateX(-50%);gap:18px;align-items:center;color:var(--brand-800);
+ opacity:0;transition:opacity .25s;pointer-events:none;font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+.v-orb .probe.on{opacity:1}
+.probe .g{display:flex;align-items:center;gap:6px;font:400 17px/1 var(--font-body)}
+.probe .g b{font-weight:400;opacity:.45;transition:opacity .12s}
+.probe .g b.hit{opacity:1}
+.probe.unsure .g b{animation:flick .26s steps(2) infinite}
+@keyframes flick{50%{opacity:.25}}
+.probe .tk{position:relative;width:62px;height:2px;background:var(--brand-200);border-radius:1px}
+.probe .tk i{position:absolute;top:-4px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--brand-800);transition:left .14s linear}
+.probe.unsure .tk i{background:#fff;border:2px solid var(--brand-800)}
+.probe .age{position:relative;width:96px;height:22px}
+.probe .age .rl{position:absolute;left:0;right:0;bottom:0;height:6px;background:repeating-linear-gradient(90deg,var(--brand-400) 0 1px,transparent 1px 16px)}
+.probe .age .br{position:absolute;bottom:0;height:12px;border:1.5px solid var(--brand-800);border-bottom:0;transition:left .12s steps(1),width .12s steps(1)}
+.probe .age span{position:absolute;top:-2px;transform:translateX(-50%);white-space:nowrap}
+.probe .id{display:flex;align-items:center;gap:5px;letter-spacing:.06em}
+.probe .id svg{width:16px;height:16px}
+.probe .id em{font-style:normal;font-family:var(--font-body);font-weight:600;opacity:0;transition:opacity .2s}
+.probe.locked .id em{opacity:1}
+.probe.locked .g b,.probe.locked .tk i,.probe.locked .br{animation:none;transition:none}
+.readout .ch.miss{color:var(--gray-500);text-decoration:line-through}
+.v-orb #go{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.v-orb #go.stop{transform:scale(1.12);transition:transform .15s}
+
+.only-orb{display:none}
+.v-orb .only-orb{display:block}
+.v-orb .probe.only-orb{display:flex}
+.v-orb{color:var(--brand-900);background:white;--bad:var(--danger);--track:var(--brand-100);--fill:var(--brand-400);--fill-edge:var(--brand-700);--me-ring:white}
+.v-orb .app{isolation:isolate;overflow:hidden;width:min(420px,100%);min-height:max(640px,100dvh);padding:28px 16px 22px;align-items:center;gap:0}
+.v-orb .who,.v-orb .steps,.v-orb .ask .k,.v-orb .wave canvas,.v-orb .wave .live,.v-orb .clock,.v-orb .golb,.v-orb .nx{display:none}
+.field{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;opacity:0;transform:translateY(40%);transition:transform .8s var(--ease-out),opacity .65s}
+.app:is([data-mood=blue],[data-mood=red]) .field{opacity:1;transform:none}
+.mist{position:absolute;inset:68% 0 -16px;--light:var(--brand-200);--deep:var(--brand-700);
+ background:linear-gradient(102deg,transparent 54%,color-mix(in srgb,var(--light) 38%,transparent)),
+ linear-gradient(180deg,var(--light) 0%,color-mix(in srgb,var(--light) 42%,var(--deep)) 22%,var(--deep) 71%);
+ box-shadow:0 -3px 14px color-mix(in srgb,var(--light) 35%,transparent);
+ animation:tide 11s ease-in-out infinite alternate;transition:opacity .64s}
+@keyframes tide{to{transform:translateY(5px)}}
+.mist.red{--deep:var(--danger);--light:var(--danger-soft);opacity:0}
+.mist.green{--deep:var(--success);--light:#c6e4d1;opacity:0}
+[data-mood=red] .blue,[data-mood=green] .blue{opacity:0}
+[data-mood=red] .red,[data-mood=green] .green{opacity:1}
+.field::after{content:"";position:absolute;inset:68% 0 0;background:linear-gradient(180deg,#fff5,transparent 52%);opacity:var(--energy,0);transition:opacity .12s}
+.v-orb .presence{position:absolute;inset:0;pointer-events:none}
+.v-orb .app .presence .gate-eyes{--eyes-y:clamp(62px,14vh,110px);--eye-color:var(--brand-600);--eye-alpha:.30;--eye-unit:1px}
+.v-orb .presence .gate-eyes .gate-anchor{animation:none;transition:top .8s var(--ease-out),font-size .8s var(--ease-out)}
+.v-orb .app:not([data-mood=idle]) .presence .gate-eyes{--eyes-y:78%;--eye-color:white;--eye-alpha:1;--eye-unit:1.55px}
+.v-orb .app[data-mood=red] .presence .gate-eyes{--eyes-y:72%;--eye-color:#701f1b}
+.v-orb .top{display:flex;align-items:center;justify-content:space-between;width:100%;font-size:12px;color:var(--gray-500)}
+.v-orb .top b{font-weight:500;color:var(--gray-700)}
+.v-orb .stage{display:flex;gap:5px}
+.v-orb .top .dots{--dot:var(--gray-200);--dot-on:var(--accent)}
+.v-orb .ask{position:absolute;top:18%;width:calc(100% - 32px);text-align:center;transition:top .7s var(--ease-out)}
+.v-orb [data-mood=idle][data-round="1"] .ask{top:36%}
+.v-orb .tone{font-size:15px;font-weight:400;color:var(--gray-700)}
+.v-orb .line{margin-top:8px;font-size:26px;font-weight:500;letter-spacing:-.02em;color:var(--ink)}
+.v-orb .chart{width:min(310px,100%);margin:18px auto 0}
+.v-orb .plot-window{display:grid;align-items:center;overflow:hidden;height:clamp(94px,18dvh,146px);transition:height .7s var(--ease-out)}
+.v-orb .plot-window svg{width:100%;height:100%;min-height:0}
+.v-orb [data-mood=idle][data-round="1"] .plot-window{height:12px}
+.v-orb [data-mood=idle][data-round="1"] #plot text{visibility:hidden}
+.v-orb .readout{grid-template-columns:12.12% repeat(5,1fr)}
+.v-orb .readout .ch{font-size:14px;font-weight:450}
+.v-orb [data-mood=idle][data-round="1"] .chart{width:min(244px,86%)}
+.v-orb #app:not([data-mood=red]) .readout>:nth-child(n+7){display:none}
+.v-orb .tone[hidden]{display:block!important;visibility:hidden;opacity:0;transform:scaleX(.75);transition:opacity .16s,transform .24s,visibility 0s .24s}
+.v-orb .params:not([hidden]) .tr{transform-origin:left;animation:grow-rail .68s var(--ease-out) both}
+@keyframes grow-rail{from{transform:scaleX(.04)}to{transform:scaleX(1)}}
+.v-orb .params{width:min(308px,100%);margin:auto;gap:9px;animation:unfold .6s var(--ease-out) both}
+@keyframes unfold{from{clip-path:inset(42% 36% 42% 36% round 8px);opacity:.4}to{clip-path:inset(0)}}
+.v-orb .prm{grid-template-columns:6em 1fr 4em;text-align:left}
+.v-orb .prm .tr{height:4px}.v-orb .prm .tg::after{height:12px;top:-4px}
+.v-orb .prm .me{width:12px;height:12px;margin-left:-6px;border-width:2px}
+.v-orb .wavebox{position:absolute;bottom:7%;opacity:0;transition:opacity .4s}.v-orb .rec .wavebox{opacity:1}
+.v-orb .wave{height:33px;width:124px;border-radius:20px;background:var(--brand-800)}
+.v-orb .bars{height:100%;display:flex;align-items:center;justify-content:center;gap:4px}
+.bars i{width:3px;border-radius:4px;background:white;transition:height .1s linear}
+.pause-hint{display:none}.v-orb .pause-hint{display:block;position:absolute;top:100%;width:220px;margin-top:10px;text-align:center;color:var(--gray-500);font-size:13px}
+.v-orb .act{position:absolute;top:59%;margin:0;transform:translateY(-50%)}
+.v-orb #go{display:grid;place-items:center;width:60px;height:60px;background:var(--brand-800);border:0;border-radius:50%;color:white}
+.v-orb #go.stop{background:var(--brand-100);color:var(--brand-800)}
+.v-orb #go svg{width:24px;height:24px}
+.v-orb .verdict{position:absolute;z-index:2;bottom:0;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;padding:24px 24px max(26px,env(safe-area-inset-bottom));animation:sheet-up .46s var(--ease-out) both}
+@keyframes sheet-up{from{transform:translateY(100%)}}
+.v-orb .verdict h2{font-size:21px;color:var(--brand-900)}
+.v-orb .verdict p{color:var(--gray-700);margin:8px 0 16px}
+.v-orb #sheetRetry{font:600 15px var(--font-body);border:0;background:var(--brand-800);color:white;border-radius:99px;width:100%;height:44px;cursor:pointer}
+.v-orb .app:has(.verdict:not([hidden])) .act,.v-orb .app:has(.verdict:not([hidden])) .wavebox{visibility:hidden}
+.v-orb .err{position:absolute;top:67%;max-width:90%;background:white;padding:8px;text-align:center}
+.v-orb .dev.min{right:6px;left:auto;bottom:4px;width:auto;border:0;box-shadow:none}
+.v-orb .dev.min .ttl{display:none}.dev.min .x{position:static}
+@media(max-height:650px){.v-orb .app .presence .gate-eyes{--eyes-y:37px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
+<link rel="stylesheet" href="flow.css">
+<script src="flow.js"></script>
 </head>
-<body class="v-call">
+<body class="v-orb">
 <main class="app" id="app">
-  <!-- call header -->
+  <header class="top only-orb"><span class="stage"><b data-i18n="voice.stage"></b><span aria-hidden="true">·</span><span data-i18n="voice.name"></span></span><span class="dots" id="voiceDots" role="img"></span></header>
+  <div class="field only-orb" aria-hidden="true"><div class="mist blue"></div><div class="mist red"></div><div class="mist green"></div></div>
+  <div class="presence only-orb" aria-hidden="true"></div>
+  <div class="probe only-orb" id="probe" role="status" data-i18n-aria-label="voice.probe">
+    <div class="g" aria-hidden="true"><b id="pM">♂</b><span class="tk"><i id="pDot"></i></span><b id="pF">♀</b></div>
+    <div class="age" aria-hidden="true"><span id="pAgeTxt"></span><div class="br" id="pAge"></div><div class="rl"></div></div>
+    <div class="id" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 12v0M7 8v8M10 5v14M13 9v6M16 6v12M19 10v4"/></svg><span id="pId">#----</span><em id="pFiled"></em></div>
+  </div>
   <div class="who only-call">
+    <span class="stage-no only-orb" data-i18n="voice.stage"></span>
     <span class="av"><img src="assets/img/logo.png" alt=""></span>
     <b data-i18n="voice.callTitle">Gate voiceprint line</b>
     <small id="callTime">00:00</small>
@@ -168,11 +281,17 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
       <p class="k" data-i18n="voice.askLine">Say this line</p>
       <div class="val"><div class="line" id="line" data-i18n="voice.line">Okay, got it.</div></div>
     </div>
+    <figure class="chart" id="chart" role="img" data-i18n-aria-label="voice.chart">
+      <div class="plot-window">
+        <svg id="plot" preserveAspectRatio="none" viewBox="0 0 330 148" aria-hidden="true"></svg>
+      </div>
+      <div class="readout" id="readout" aria-hidden="true"></div>
+    </figure>
   </section>
 
   <div class="wavebox">
     <p class="k only-form" data-i18n="voice.waveLabel">Voiceprint</p>
-    <div class="wave"><canvas id="cv" role="img" aria-label="Waveform of your voice" data-i18n-aria-label="voice.wave"></canvas><span class="live"><i></i><span data-i18n="voice.listening">Listening…</span></span></div>
+    <div class="wave"><div id="bars" class="bars only-orb" role="img" data-i18n-aria-label="voice.wave"></div><canvas id="cv" role="img" aria-label="Waveform of your voice" data-i18n-aria-label="voice.wave"></canvas><span class="live"><i></i><span data-i18n="voice.listening">Listening…</span></span></div>
   </div>
 
   <section class="verdict" id="verdict" aria-live="assertive" hidden>
@@ -180,23 +299,25 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
     <h2 id="vTitle"></h2>
     <p id="vWhy"></p>
     <p class="nx" id="vNext"></p>
+    <button type="button" class="only-orb" id="sheetRetry" data-i18n="voice.retry"></button>
   </section>
   <div class="err" id="err" role="alert"></div>
 
   <div class="act">
     <button id="go" type="button"></button>
+    <small class="pause-hint" data-i18n="voice.pauseHint"></small>
     <span class="golb" id="golb" aria-hidden="true"></span>
     <span class="clock" id="clock" aria-hidden="true"></span>
   </div>
 </main>
 
+<script src="eyes.js" data-scene="voice" data-mount=".presence" data-initial="watch"></script>
 <script>i18n.apply(document);</script>
-<script src="flow.js"></script>
-<script src="bloom.js"></script>
+<script src="visitor.js"></script>
 <script>
 const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const ROUNDS=3;               // round 3 (±0.5 tolerance + playback) comes next
-const MAXS=6,STEP=50;         // seconds on the strip, ms per envelope sample
+const MAXS=7,STEP=20;         // seconds on the strip, ms per envelope sample
 const SPLIT=7.2;              // dB spread: below = "flat / TTS", above = "acting"
 const TARGET={polite:70,imp:30};
 let round=0,env=[],ctx=null,an=null,stream=null,t0=0,raf=0,floor=-60;
@@ -205,15 +326,176 @@ let round=0,env=[],ctx=null,an=null,stream=null,t0=0,raf=0,floor=-60;
 const params=new URLSearchParams(location.search);
 function setLook(v){
   document.body.className='v-'+v;
-  try{localStorage.setItem('voice-look',v);}catch{}
+  const eyeMount=v==='orb'?document.querySelector('.presence'):v==='form'?$('app'):document.body;
+  eyeMount.prepend(document.querySelector('.gate-eyes'));
   draw();
 }
-let look=params.get('v');try{look=look||localStorage.getItem('voice-look');}catch{}
-look=look==='form'?'form':'call';
+const requested=params.get('v');
+const look=['call','form'].includes(requested)?requested:'orb';
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const barNodes=Array.from({length:17},()=>$('bars').appendChild(document.createElement('i')));
+function meter(){
+  const last=env.at(-1);
+  const level=e=>e?.sp?Math.max(0,Math.min(1,(e.db-floor)/45)):0;
+  const amplitude=level(last);
+  $('bars').toggleAttribute('data-voiced',amplitude>0);
+  Eyes.level(last?.sp?last.db:-90);
+  $('app').style.setProperty('--energy',reduced.matches?0:amplitude);
+  barNodes.forEach((bar,i)=>{
+    const distance=Math.abs(i-8);
+    const sample=env.at(-1-distance);
+    const idle=3+Math.max(0,1-distance/6)*(3+3*Math.cos(i*2));
+    bar.style.height=(reduced.matches?idle:idle+level(sample)*(17-distance*1.7))+'px';
+  });
+}
+
+/* ---------- per-syllable chart ----------
+   Each column is one syllable of the line (the comma is the pause).
+   Up = polite, down = impatient. Solid = what Gate says it measured, hatched cap = what it is guessing.
+   The numbers come from real pitch, volume and length of your voice; the formula is Gate's black box. */
+const SEGS=t('voice.segs').split('|');
+const TARGET_SHAPE=[{pol:72,imp:14},{pol:64,imp:20},{pol:34,imp:8},{pol:22,imp:58},{pol:12,imp:74}];
+const PX=330,BASE=74,SCALE=.66,COL0=40,COLW=(PX-COL0)/5,BW=24;
+let shown=SEGS.map(()=>({pol:0,imp:0,unc:0})),goal=shown.map(o=>({...o})),feat=SEGS.map(()=>null),liveCol=-1,worstCol=-1,anim=0;
+function capBar(x,len,up,r){ // bar from the baseline, rounded at the far end
+  if(len<=0.5)return '';
+  r=Math.min(r,len);const y=up?BASE-len:BASE+len,d=up?1:-1;
+  return `M${x} ${BASE}V${y+d*r}A${r} ${r} 0 0 ${up?1:0} ${x+2*r} ${y+d*r}V${BASE}Z`;
+}
+function plot(){
+  const sv=$('plot');const tgt=round===1;
+  let g=`<defs>
+    <pattern id="hp" width="7" height="5" patternUnits="userSpaceOnUse"><path d="M0 4 L1.75 1 L3.5 4 L5.25 1 L7 4" fill="none" stroke="var(--brand-600)" stroke-width="1.1"/></pattern>
+    <pattern id="hi" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--danger)" stroke-width="1.4"/></pattern>
+  </defs>`;
+  g+=`<text x="0" y="12" font-size="10" fill="var(--brand-600)" font-weight="600" letter-spacing=".04em">${t('voice.polite')}</text>`;
+  g+=`<text x="0" y="${BASE*2-4}" font-size="10" fill="var(--danger)" font-weight="600" letter-spacing=".04em">${t('voice.impatient')}</text>`;
+  shown.forEach((o,i)=>{
+    const x=COL0+i*COLW+(COLW-BW)/2,r=BW/2;
+    if(i===liveCol)g+=`<rect x="${COL0+i*COLW+3}" y="4" width="${COLW-6}" height="${BASE*2-8}" rx="8" fill="var(--brand-50)"/>`;
+    g+=`<path d="${capBar(x,(o.pol+o.unc)*SCALE,true,r)}" fill="url(#hp)"/>`;
+    g+=`<path d="${capBar(x,(o.imp+o.unc)*SCALE,false,r)}" fill="url(#hi)"/>`;
+    g+=`<path d="${capBar(x,o.pol*SCALE,true,r)}" fill="var(--brand-600)"/>`;
+    g+=`<path d="${capBar(x,o.imp*SCALE,false,r)}" fill="var(--danger)"/>`;
+    if(tgt){const T=TARGET_SHAPE[i],w=BW+8,tx=x-4;
+      const st=`fill="none" stroke="var(--brand-900)" stroke-width="1.5" stroke-dasharray="3 3"`;
+      g+=`<path d="${capBar(tx,T.pol*SCALE,true,w/2)}" ${st}/><path d="${capBar(tx,T.imp*SCALE,false,w/2)}" ${st}/>`;}
+  });
+  g+=`<line x1="${COL0-6}" x2="${PX}" y1="${BASE}" y2="${BASE}" stroke="var(--gray-300)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  sv.innerHTML=g;
+  const cell=(v,i)=>`<span class="${i===liveCol?'on':''}">${v}</span>`;
+  const f=i=>feat[i];
+  $('readout').innerHTML=`<span></span>${SEGS.map((c,i)=>`<span class="ch${i===liveCol?' on':''}${i===worstCol?' worst':''}${missing.includes(i)?' miss':''}">${c}</span>`).join('')}`+
+    `<b>${t('voice.pitchRow')}</b>${SEGS.map((_,i)=>cell(f(i)?.hz?Math.round(f(i).hz):'—',i)).join('')}`+
+    `<b>${t('voice.volRow')}</b>${SEGS.map((_,i)=>cell(f(i)&&f(i).db!=null?Math.round(f(i).db):'—',i)).join('')}`+
+    `<b>${t('voice.lenRow')}</b>${SEGS.map((_,i)=>cell(f(i)?f(i).dur.toFixed(2):'—',i)).join('')}`;
+}
+/* ease the drawn bars toward their goal */
+function settle(){
+  cancelAnimationFrame(anim);
+  const step=()=>{let moving=false;
+    shown.forEach((o,i)=>{for(const k of ['pol','imp','unc']){const d=goal[i][k]-o[k];if(Math.abs(d)>.3){o[k]+=d*(reduced.matches?1:.18);moving=true;}else o[k]=goal[i][k];}});
+    plot();if(moving)anim=requestAnimationFrame(step);};
+  step();
+}
+function resetChart(){missing=[];shown=SEGS.map(()=>({pol:0,imp:0,unc:0}));goal=shown.map(o=>({...o}));feat=SEGS.map(()=>null);liveCol=-1;worstCol=-1;plot();}
+/* pitch by autocorrelation, 70–400 Hz; 0 when the frame isn't clearly voiced */
+function pitchOf(buf,sr){
+  const N=1024,minL=sr/400|0,maxL=Math.min(buf.length-N,sr/70|0);let e=0;for(let i=0;i<N;i++)e+=buf[i]*buf[i];
+  if(e<1e-4)return 0;let best=0,bl=0;
+  for(let l=minL;l<=maxL;l++){let c=0;for(let i=0;i<N;i++)c+=buf[i]*buf[i+l];if(c>best){best=c;bl=l;}}
+  return best/e>.55?sr/bl:0;
+}
+/* while you speak: every syllable has its own loudness bump. Each new bump (an onset) moves to the next column:
+   onsets 1,2 -> 好 的 ; a gap after the 2nd -> the comma ; onsets 3,4 -> 收 到 */
+const CHAR_COL=[0,1,3,4];
+let onsets=[],valley=0,peak=-90,sinceOnset=99,gapRun=0,pauseFrames=0;
+function resetOnsets(){onsets=[];valley=0;peak=-90;sinceOnset=99;gapRun=0;pauseFrames=0;}
+function chartLive(){
+  const i=env.length-1,e=env[i];if(!e)return;
+  sinceOnset++;
+  if(!e.sp){gapRun++;valley=Math.min(valley,e.db);peak=Math.min(peak,valley);
+    if(onsets.length===2&&gapRun>=6){pauseFrames++;setLive(2,{pol:Math.min(90,pauseFrames*3),imp:Math.max(4,40-pauseFrames*2),unc:22});feat[2]={dur:pauseFrames*STEP/1000,db:null,hz:0};}
+    return;}
+  // a new syllable = sound after a gap, or a climb of 5 dB out of a dip that fell 5 dB below the last peak
+  const dipped=peak-valley>=5,climbed=e.db-valley>=5;
+  if((gapRun>=4||onsets.length===0||(dipped&&climbed))&&sinceOnset>=5){onsets.push(i);sinceOnset=0;peak=e.db;valley=e.db;}
+  else if(e.db>peak){peak=e.db;valley=e.db;}
+  else valley=Math.min(valley,e.db);
+  gapRun=0;
+  const k=Math.min(onsets.length,4)-1;if(k<0)return;
+  const col=CHAR_COL[k],lvl=Math.max(0,Math.min(1,(e.db-floor)/40));
+  setLive(col,{pol:Math.max(goal[col].pol*.92,lvl*(e.hz>185?78:e.hz?48:40)),imp:Math.max(goal[col].imp*.92,lvl*(e.hz&&e.hz<150?78:44)),unc:12+lvl*12});
+  const f=feat[col]||{dur:0,db:e.db,hz:0};f.dur+=STEP/1000;f.db=Math.round(Math.max(f.db??-90,e.db));if(e.hz)f.hz=e.hz;feat[col]=f;
+}
+function setLive(col,v){liveCol=col;Object.assign(goal[col],v);settle();}
+/* after you let go: syllables run from one onset to the next; columns with no onset are "not heard" */
+let missing=[];
+function syllables(){
+  const first=env.findIndex(e=>e.sp);if(first<0)return null;
+  const last=env.length-1-[...env].reverse().findIndex(e=>e.sp);
+  const voiced=env.filter(e=>e.sp),mean=voiced.reduce((a,e)=>a+e.db,0)/voiced.length;
+  const on=onsets.length?onsets.slice(0,4):[first];
+  const parts=SEGS.map(()=>null);missing=[];
+  on.forEach((a,k)=>{
+    let b=k+1<on.length?on[k+1]:last+1;
+    if(k===1&&on.length>2){let j=b-1;while(j>a&&!env[j].sp)j--;const gap=[j+1,b];parts[2]={pause:true,dur:(gap[1]-gap[0])*STEP/1000};b=j+1;}
+    const fr=env.slice(a,b),vs=fr.filter(e=>e.sp),hzs=vs.map(e=>e.hz).filter(Boolean);
+    const avg=arr=>{const h=arr.map(e=>e.hz).filter(Boolean);return h.length?h.reduce((p,q)=>p+q,0)/h.length:0;};
+    const third=Math.max(1,(vs.length/3)|0),h0=avg(vs.slice(0,third)),h1=avg(vs.slice(-third));
+    const db=vs.length?vs.reduce((p,e)=>p+e.db,0)/vs.length:null;
+    parts[CHAR_COL[k]]={dur:(b-a)*STEP/1000,db,hz:hzs.length?hzs.sort((p,q)=>p-q)[hzs.length>>1]:0,slope:h0&&h1?h1-h0:0,rel:db==null?0:db-mean};
+  });
+  if(!parts[2])parts[2]={pause:true,dur:0};
+  SEGS.forEach((_,i)=>{if(!parts[i])missing.push(i);});
+  return parts;
+}
+const clampV=v=>Math.round(Math.max(4,Math.min(96,v)));
+function score(parts){
+  const jit=()=>(Math.random()-.5)*10;
+  return parts.map(p=>{
+    if(!p)return {pol:0,imp:0,unc:34};
+    if(p.pause){const ms=p.dur*1000;return {pol:clampV(ms/5+jit()),imp:clampV((280-ms)/3+jit()),unc:24};}
+    const loud=p.rel/6,fall=p.slope?-p.slope/30:0,fast=(.24-p.dur)/.12,rise=p.slope>0?p.slope/30:0;
+    const imp=clampV(30+22*loud+24*fall+18*fast+jit());
+    return {pol:clampV(80-imp*.75+14*rise-10*loud+jit()),imp,unc:Math.round(8+(p.hz?0:18)+Math.random()*8)};
+  });
+}
+
+/* ---------- voiceprint probe ---------- */
+let probeTimer=0,probeFade=0,probeHz=[],probeLast=0;
+const hex=()=>'#'+Math.floor(Math.random()*65536).toString(16).toUpperCase().padStart(4,'0');
+function ageAt(lo){$('pAge').style.left=(lo-10)/60*96+'px';$('pAge').style.width='16px';$('pAgeTxt').style.left=((lo-10)/60*96+8)+'px';$('pAgeTxt').textContent=lo+'–'+(lo+9);}
+function probeStart(){
+  clearTimeout(probeFade);probeHz=[];const p=$('probe');p.className='probe only-orb on';$('pFiled').textContent='';
+  $('pDot').style.left='50%';$('pM').className='';$('pF').className='';
+  clearInterval(probeTimer);
+  probeTimer=setInterval(()=>{$('pId').textContent=hex();ageAt(10+((Math.random()*6)|0)*10);},90);
+}
+function probeTick(){
+  const e=env.at(-1);if(e?.hz)probeHz.push(e.hz);
+  if(performance.now()-probeLast<70||!probeHz.length)return;probeLast=performance.now();
+  const recent=probeHz.slice(-12).sort((a,b)=>a-b),hz=recent[recent.length>>1];
+  const x=Math.max(0,Math.min(1,(hz-95)/170));
+  $('pDot').style.left=(x*100)+'%';
+  const male=hz<160,female=hz>190;
+  $('pM').classList.toggle('hit',male);$('pF').classList.toggle('hit',female);
+  $('probe').classList.toggle('unsure',!male&&!female);
+}
+function probeLock(){
+  clearInterval(probeTimer);const p=$('probe');
+  const all=probeHz.slice().sort((a,b)=>a-b),hz=all.length?all[all.length>>1]:0;
+  if(hz){const male=hz<160,female=hz>190;$('pM').classList.toggle('hit',male);$('pF').classList.toggle('hit',female);p.classList.toggle('unsure',!male&&!female);$('pDot').style.left=Math.max(0,Math.min(1,(hz-95)/170))*100+'%';}
+  else p.classList.add('unsure');
+  const spread=all.length?all[(all.length*.9)|0]-all[(all.length*.1)|0]:0;
+  ageAt(Math.max(10,Math.min(60,(spread>60?20:spread>30?30:50))));
+  $('pId').textContent=hex();p.classList.add('locked');$('pFiled').textContent='✓ '+t('voice.filed');
+  probeFade=setTimeout(()=>p.classList.remove('on'),1500);
+}
 
 /* call timer, like a phone line that's been open since you arrived */
 const callStart=Date.now();
-setInterval(()=>{const s=(Date.now()-callStart)/1000|0;$('callTime').textContent=String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');},1000);
+if(look==='call')setInterval(()=>{const s=(Date.now()-callStart)/1000|0;$('callTime').textContent=String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');},1000);
 
 /* ---------- UI bits ---------- */
 const MIC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>';
@@ -226,15 +508,32 @@ function button(kind){
   // the round call button carries only the icon; its words sit underneath
   g.innerHTML=icon+`<span class="only-form">${label}</span>`;g.setAttribute('aria-label',label);
   $('golb').textContent=label;
+  $('sheetRetry').textContent=t(kind==='next'?'voice.continue':'voice.retry');
+  document.querySelector('.pause-hint').textContent=t(kind==='stop'?'voice.tapToStop':'voice.holdHint');
 }
-function steps(n){document.querySelectorAll('#steps li').forEach((li,i)=>li.classList.toggle('on',i+1===n));}
-function setDots(){for(const id of ['dots','dots2']){const d=$(id);d.innerHTML=Array.from({length:ROUNDS},(_,i)=>`<i class="${i<=round?'on':''}"></i>`).join('');}
+function steps(n){
+  document.querySelectorAll('#steps li').forEach((li,i)=>{
+    const current=i+1===n;
+    li.classList.toggle('on',current);
+    if(current)li.setAttribute('aria-current','step');else li.removeAttribute('aria-current');
+  });
+}
+function setDots(){for(const id of ['dots','dots2','voiceDots']){const d=$(id);d.innerHTML=Array.from({length:ROUNDS},(_,i)=>`<i class="${i<=round?'on':''}"></i>`).join('');}
+  $('voiceDots').setAttribute('aria-label',t('voice.progress',{n:round+1,total:ROUNDS}));
   $('dots').setAttribute('aria-label',t('voice.progress',{n:round+1,total:ROUNDS}));}
 function reject(title,why,next){
-  const v=$('verdict');v.hidden=false;$('vTitle').textContent=title;$('vWhy').textContent=why;$('vNext').textContent=next;
+  Eyes.set('cold');$('app').dataset.mood='red';
+  const v=$('verdict');$('vTitle').textContent=title;$('vWhy').textContent=why;$('vNext').textContent=next;
   const s=$('stamp');s.classList.remove('hit');void s.offsetWidth;s.classList.add('hit');
   v.classList.remove('shake');void v.offsetWidth;v.classList.add('shake');
-  beep();v.scrollIntoView({block:'nearest',behavior:'smooth'});
+  beep();
+  const orb=document.body.classList.contains('v-orb');
+  $('go').disabled=true;
+  setTimeout(()=>{
+    v.hidden=false;$('go').disabled=false;
+    if(orb)$('sheetRetry').focus({preventScroll:true});
+    else v.scrollIntoView({block:'nearest',behavior:reduced.matches?'instant':'smooth'});
+  },orb&&!reduced.matches?480:0);
 }
 /* two short low tones: the "wrong answer" of an automated phone line */
 function beep(){try{ctx=ctx||new AudioContext();const n=ctx.currentTime;
@@ -244,6 +543,7 @@ function beep(){try{ctx=ctx||new AudioContext();const n=ctx.currentTime;
 
 /* ---------- waveform strip: one mirrored bar per 50 ms ---------- */
 function draw(mark){
+  if(document.body.classList.contains('v-orb')){meter();return;}
   const cv=$('cv'),r=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w)return;
   if(cv.width!==w*r||cv.height!==h*r){cv.width=w*r;cv.height=h*r;}
   const g=cv.getContext('2d');g.setTransform(r,0,0,r,0,0);g.clearRect(0,0,w,h);
@@ -268,41 +568,53 @@ function measure(){
   const sd=Math.sqrt(sp.reduce((a,e)=>a+(e.db-m)**2,0)/sp.length);
   const first=env.findIndex(e=>e.sp),last=env.length-1-[...env].reverse().findIndex(e=>e.sp);
   sp.forEach(e=>e.hot=e.db>m+sd);
-  return {sd,dur:(last-first+1)*STEP/1000};
+  return {sd,dur:(last-first+1)*STEP/1000,voicedFrames:sp.length};
 }
 
 /* ---------- microphone ---------- */
+let holding=false,recording=false;
 async function start(){
   $('err').textContent='';$('verdict').hidden=true;
   try{
     if(!stream)stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    ctx=ctx||new AudioContext();await ctx.resume();
+    if(!an){an=ctx.createAnalyser();an.fftSize=2048;ctx.createMediaStreamSource(stream).connect(an);}
   }catch(e){$('err').textContent=t('voice.micBlocked');return;}
-  ctx=ctx||new AudioContext();await ctx.resume();
-  if(!an){an=ctx.createAnalyser();an.fftSize=2048;ctx.createMediaStreamSource(stream).connect(an);}
-  env=[];$('app').classList.add('rec');button('stop');steps(2);t0=performance.now();
-  const buf=new Float32Array(an.fftSize);let next=0,quiet=0,heard=false,cal=[];
+  if(!holding)return;            // let go before the microphone was ready
+  beginListening();
+  const buf=new Float32Array(an.fftSize);let next=0;floor=-48;
   const tick=()=>{
     const el=performance.now()-t0;$('clock').textContent=(el/1000).toFixed(1)+' s';
-    if(el>=next){next+=STEP;
+    while(el>=next){next+=STEP;
       an.getFloatTimeDomainData(buf);let s=0;for(const x of buf)s+=x*x;
       const db=Math.max(-90,10*Math.log10(s/buf.length+1e-12));
-      if(el<300){cal.push(db);floor=Math.min(...cal);}
+      floor=Math.min(floor,db);
       const sp=db>Math.max(floor+9,-55);
-      env.push({db,sp});heard=heard||sp;quiet=sp?0:quiet+STEP;
-      if(heard&&quiet>=200)steps(3);else if(heard)steps(2);
-      draw();
-      if((heard&&quiet>900)||el>=MAXS*1000){stop();return;}
+      env.push({db,sp,hz:sp?pitchOf(buf,ctx.sampleRate):0});
+      draw();chartLive();probeTick();
     }
+    if(el>=MAXS*1000){holding=false;stop();return;}
     raf=requestAnimationFrame(tick);
   };tick();
 }
-function stop(){cancelAnimationFrame(raf);$('app').classList.remove('rec');judge(measure());}
+function beginListening(){
+  $('go').disabled=false;$('err').textContent='';$('verdict').hidden=true;
+  Eyes.set('scrutinize');env=[];$('app').dataset.mood='blue';$('app').classList.add('rec');
+  resetChart();resetOnsets();probeStart();recording=true;
+  button('stop');steps(2);t0=performance.now();
+}
+function stop(){if(!recording)return;recording=false;cancelAnimationFrame(raf);$('app').classList.remove('rec');button('record');$('go').disabled=true;probeLock();judge(measure());}
 
 /* ---------- the two rounds ---------- */
+const voicedFrames = [];
 async function judge(r){
   steps(0);
-  if(!r){draw();reject(t('voice.noVoiceTitle'),t('voice.noVoiceWhy'),t('voice.noVoiceNext'));button('record');steps(1);return;}
+  if(!r){draw();reject(t('voice.noVoiceTitle'),t('voice.noVoiceWhy',{sec:(env.filter(e=>e.sp).length*STEP/1000).toFixed(2)}),t('voice.noVoiceNext'));button('record');steps(1);return;}
+  voicedFrames[round]=r.voicedFrames;
   $('clock').textContent=r.dur.toFixed(1)+' s';
+  const parts=syllables();feat=parts;goal=score(parts);liveCol=-1;settle();
+  // Gate looks at its own chart and hesitates before deciding
+  $('go').disabled=true;Eyes.set('doubt');Eyes.lookAt($('plot'));await wait(reduced.matches?100:950);$('go').disabled=false;
   if(round===0){
     // always rejected: the human band is a 0.2 dB sliver just past whichever side you land on
     const flat=r.sd<SPLIT,lo=flat?(r.sd+2.1):Math.max(.5,r.sd-3.4),hi=lo+.2;
@@ -311,41 +623,63 @@ async function judge(r){
     reject(t(flat?'voice.flatTitle':'voice.overTitle'),t(flat?'voice.flatWhy':'voice.overWhy',p),t('voice.flatNext'));
     button('retry');steps(1);return;
   }
-  // round 2: turn the reading into "polite / impatient" and miss the target by a visible margin
+  // round 2: compare your bars with the dashed target shape; the bar is always just out of reach
   draw();
-  let imp=TARGET.imp+(r.sd-SPLIT)*3.2+(1.3-r.dur)*22+(Math.random()-.5)*8;
-  imp=Math.round(Math.min(88,Math.max(6,imp)));
-  if(Math.abs(imp-TARGET.imp)<3)imp=TARGET.imp+(Math.random()<.5?-3:3)+(Math.random()<.5?-1:1);
-  const pol=Math.round(Math.min(94,Math.max(8,100-imp-2-Math.random()*8)));
-  showMe('pPolite',pol,TARGET.polite);showMe('pImp',imp,TARGET.imp);
-  await wait(700);
-  const d=Math.abs(imp-TARGET.imp);
-  reject(t('voice.tolTitle'),t('voice.tolWhy',{target:TARGET.imp,you:imp,d}),t(imp>TARGET.imp?'voice.tolNextLower':'voice.tolNextRaise',{d}));
+  let worst={i:0,k:'imp',d:0},sum=0;
+  goal.forEach((o,i)=>{const T=TARGET_SHAPE[i];for(const k of ['pol','imp']){const d=o[k]-T[k];sum+=Math.abs(d);if(Math.abs(d)>Math.abs(worst.d))worst={i,k,d};}});
+  if(Math.abs(worst.d)<6){worst.d=worst.d<0?-7:7;goal[worst.i][worst.k]=clampV(TARGET_SHAPE[worst.i][worst.k]+worst.d);settle();}
+  const m=Math.min(93,Math.max(41,Math.round(100-sum/10*1.15)));
+  worstCol=worst.i;plot();
+  reject(t('voice.shapeTitle'),t('voice.shapeWhy',{m,seg:SEGS[worst.i],dim:t(worst.k==='pol'?'voice.polite':'voice.impatient').toLowerCase(),dir:t(worst.d>0?'voice.tooHigh':'voice.tooLow'),d:Math.abs(Math.round(worst.d))}),'');
   button('next');
 }
-function showMe(id,val,target){
-  const p=$(id);p.classList.add('show');p.querySelector('.me').style.left=val+'%';
-  p.querySelector('.v').innerHTML=`${target}%<small>${t('voice.you')} ${val}%</small>`;
-}
+$('sheetRetry').onclick=()=>{
+  $('verdict').hidden=true;
+  const k=$('go').dataset.kind;
+  if(k==='retry'){setRound(1);return;}
+  if(k==='record'){setRound(round);return;}
+  if(k==='next')$('go').click();
+};
 function setRound(i){
+  $('probe').classList.remove('on');
+  Eyes.set(look==='orb'?'watch':'surfaced');$('app').dataset.mood='idle';$('app').dataset.round=i+1;
   round=i;setDots();env=[];draw();$('verdict').hidden=true;$('clock').textContent='';
-  $('askTone').textContent=t(i===0?'voice.askTone':'voice.askTone2');
-  $('tone1').hidden=i!==0;$('params').hidden=i===0;
-  for(const [id,val] of [['pPolite',TARGET.polite],['pImp',TARGET.imp]]){
-    const p=$(id);p.classList.remove('show');p.querySelector('.tg').style.width=val+'%';p.querySelector('.v').textContent=val+'%';}
+  $('tone1').textContent=t(i===0?'voice.tone1':'voice.tone2');$('params').hidden=true;
+  resetChart();
   button('record');steps(1);
 }
+function press(e){
+  if($('go').dataset.kind!=='record'||$('go').disabled||holding)return;
+  e?.preventDefault();holding=true;start();
+}
+function release(){
+  if(!holding)return;holding=false;
+  if(recording){
+    if(performance.now()-t0<350){cancelAnimationFrame(raf);recording=false;$('app').classList.remove('rec');clearInterval(probeTimer);$('probe').classList.remove('on');setRound(round);return;}
+    stop();
+  }
+}
+$('go').addEventListener('pointerdown',press);
+addEventListener('pointerup',release);addEventListener('pointercancel',release);
+$('go').addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat)press(e);});
+$('go').addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')release();});
+$('go').addEventListener('contextmenu',e=>e.preventDefault());
 $('go').onclick=async()=>{
   const k=$('go').dataset.kind;
-  if(k==='record'){start();return;}
-  if(k==='stop'){stop();return;}
-  if(k==='retry'){setRound(1);start();return;}   // round 2 starts listening right away, with the new numbers on screen
-  // TODO round 3: ±0.5 tolerance, then playback of the original vs the flattened "standard" voice
-  const r=$('go').getBoundingClientRect();
-  if(window.Bloom)await Bloom.play({from:{x:r.left+r.width/2,y:r.top+r.height/2},color:'pass',hold:450});
-  flowNext();
+  if(k==='record'||k==='stop')return;          // handled by press and hold
+  if(k==='retry'){setRound(1);return;}
+  $('go').disabled=true;
+  $('err').textContent='';
+  try {
+    await flowNext({ready: () => visitorRequest('complete', {voicedFrames})});
+  } catch {
+    $('err').textContent=t('jury.retry');
+    $('go').disabled=false;
+    return;
+  }
 };
 
+addEventListener('pageshow',e=>{if(e.persisted && $('go').dataset.kind==='next') $('go').disabled=false;});
 addEventListener('resize',()=>draw());
 setLook(look);setRound(0);
 </script>

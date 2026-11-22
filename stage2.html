@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="assets/fonts/portal/fonts.css">
 <style>
 /* Stage 2 · Irrational Choice. Same white minimal shell as Stage 1 (face.html C);
-   the challenge itself borrows the reCAPTCHA image-grid card: blue prompt band, tiles, icon toolbar. */
+   the challenge itself borrows the reCAPTCHA image-grid card: colored prompt band, tiles, icon toolbar. */
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);font-family:var(--font-body);color:var(--text);-webkit-font-smoothing:antialiased}
@@ -43,11 +43,15 @@ body{background:var(--bg);font-family:var(--font-body);color:var(--text);-webkit
 .card{margin:auto 0;background:var(--white);border:1px solid var(--gray-300);border-radius:4px;box-shadow:0 10px 32px rgba(16,38,47,.12);padding:8px}
 .card.shake{animation:shake .4s ease-out}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}45%{transform:translateX(6px)}70%{transform:translateX(-3px)}}
-.band{background:var(--accent);color:var(--white);padding:18px 18px 20px;min-height:118px}
-.band small{display:block;font-size:var(--fs-small);opacity:.9}
+.band{--desk-paper:#0b132b;--desk-ink:#e0e6ed;--desk-note:#abbbce;position:relative;background:var(--desk-paper);color:var(--desk-ink);padding:18px 18px 20px;min-height:118px}
+.band[data-palette="pine"]{--desk-paper:#0e2425;--desk-ink:#e4f1ea;--desk-note:#a4c2bd}
+.band[data-palette="plum"]{--desk-paper:#36223d;--desk-ink:#faefff;--desk-note:#d4b6d9}
+.desk-note::before{content:"";position:absolute;top:19px;left:9px;width:2px;height:12px;background:var(--desk-note);transform:rotate(6deg)}
+.band small{display:block;font-size:var(--fs-small);color:var(--desk-note)}
 .band h2{margin:6px 0 0;font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.18;text-wrap:balance}
-.band h2 mark{background:none;color:inherit;font-weight:800;box-shadow:inset 0 -.36em 0 rgba(255,255,255,.28)}
-.band p{margin:8px 0 0;font-size:var(--fs-small);opacity:.9}
+.band h2 mark{background:none;color:inherit;font-weight:800}
+.band p{margin:8px 0 0;color:var(--desk-note);font-size:var(--fs-small)}
+.desk-note p{font:15px/1.2 "Kaiti SC","STKaiti","KaiTi",Georgia,serif}
 /* distorted keyword: Solve Media-style warped text on a pale wash */
 .band .warp{display:none;margin-top:8px;width:100%;height:64px;background:#e6dbe8;border-radius:2px}
 .hdr-warp .band h2 mark{display:none}
@@ -128,6 +132,8 @@ html:lang(zh-CN) .band h2 mark{font-weight:400}
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
+<link rel="stylesheet" href="flow.css">
+<script src="flow.js"></script>
 </head>
 <body class="fx f-mix">
 <!-- the captcha texture: slight desaturation, crushed range, grain. Tweak here once, applies to every tile. -->
@@ -190,11 +196,11 @@ html:lang(zh-CN) .band h2 mark{font-weight:400}
   <div class="top"><span class="stage"><b data-i18n="quiz.stage">Stage 2</b><span data-i18n="quiz.intuition">Intuition</span></span><span class="dots" id="dots" role="img"></span></div>
 
   <section class="card" id="card" aria-labelledby="kw">
-    <div class="band">
-      <small id="pre" data-i18n="quiz.tap">Tap one image</small>
+    <div class="band desk-note" id="questionBand">
+      <small id="pre" data-i18n="quiz.deskPrompt">Pick the one that feels right.</small>
       <h2 id="kw"></h2>
       <svg class="warp" id="warpSvg" viewBox="0 0 320 64" preserveAspectRatio="xMinYMid meet" aria-hidden="true"></svg>
-      <p id="post" data-i18n="quiz.noRight">There is no right answer.</p>
+      <p id="post" data-i18n="quiz.deskNote">Your turn. I took a while, too.</p>
     </div>
     <div class="grid" id="grid" role="group" aria-labelledby="kw"></div>
     <div class="tl" id="tl" aria-hidden="true" hidden></div>
@@ -209,9 +215,8 @@ html:lang(zh-CN) .band h2 mark{font-weight:400}
   </section>
 </main>
 
+<script src="eyes.js" data-scene="stage2"></script>
 <script>i18n.apply(document);</script>
-<script src="flow.js"></script>
-<script src="bloom.js"></script>
 <script>
 const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -268,6 +273,12 @@ let idx=0,need=3,passed=[],steadyFlags=0,q=null,order=[],t0=0,raf=0,busy=false,s
 function makeRun(first){const A=shuffle(BANK.filter(b=>!b.photo&&b!==first)),B=shuffle(BANK.filter(b=>b.photo&&b!==first)),r=first?[first]:[];
   while(A.length||B.length){const want=r.length%2?B:A,alt=want===A?B:A;r.push((want.length?want:alt).shift());}return r;}
 let run=makeRun();
+const deskPalettes = ['navy', 'pine', 'plum'];
+function changeQuestionPalette() {
+  const band = $('questionBand');
+  const choices = deskPalettes.filter(palette => palette !== band.dataset.palette);
+  band.dataset.palette = choices[Math.floor(Math.random() * choices.length)];
+}
 
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 function setDots(added){const d=$('dots');d.innerHTML=Array.from({length:need},(_,i)=>`<i class="${i<=idx?'on':''}${added&&i===need-1?' new':''}"></i>`).join('');
@@ -303,13 +314,17 @@ function render(fresh){
   startClock();  // the clock starts when the tiles are put on the page, so a click can never land before it
   requestAnimationFrame(()=>requestAnimationFrame(()=>g.classList.add('in')));
 }
-function startClock(){cancelAnimationFrame(raf);t0=performance.now();busy=false;
+function startClock(){Eyes.set('watch');cancelAnimationFrame(raf);t0=performance.now();busy=false;
   const tick=()=>{$('clock').textContent=((performance.now()-t0)/1000).toFixed(1)+' s';raf=requestAnimationFrame(tick);};tick();}
 
 function load(i,added){idx=i;q=run[i%run.length];strikes=0;win=WIN[Math.min(passed.length,WIN.length-1)];
   $('verdict').innerHTML='';$('verdict').className='verdict';$('tl').hidden=passed.length===0;if(passed.length)drawTL(null);
+  changeQuestionPalette();
   setDots(added);render(true);}
 
+for(const event of ['pointerover','pointerdown','focusin']){
+  $('grid').addEventListener(event,e=>{if(!busy&&e.target.closest('.tile'))Eyes.set('scrutinize');});
+}
 async function choose(i,btn){
   if(busy)return;busy=true;cancelAnimationFrame(raf);
   const dt=(performance.now()-t0)/1000;
@@ -317,7 +332,7 @@ async function choose(i,btn){
   const v=$('verdict');
   const tooFast=dt<win[0],tooSlow=dt>win[1];
   if((tooFast||tooSlow)&&strikes<2){
-    strikes++;
+    Eyes.set('cold');strikes++;
     drawTL(dt,'bad');
     v.className='verdict bad';
     v.innerHTML=tooFast
@@ -351,6 +366,9 @@ async function choose(i,btn){
       v.innerHTML=V('ok',t('verdict.pass'),t('verdict.picked', {pct}),[t('verdict.outlier')]);
     }
   }
+  const uncertain=added||tooFast||tooSlow||(!done&&pct!==top);
+  Eyes.set(uncertain?'doubt':'pass');
+  if(uncertain)Eyes.lookAt(v);
   if(added)setDots(true);
   const last=done||idx+1>=need;
   $('go').disabled=false;$('go').textContent=last?t('quiz.verify'):t('quiz.next');$('go').dataset.end=last?'1':'';$('go').focus();
@@ -358,8 +376,6 @@ async function choose(i,btn){
 $('go').onclick=async()=>{
   if(!$('go').dataset.end){$('grid').classList.remove('in');await wait(200);load(idx+1);return;}
   idx=need;setDots();
-  const r=$('go').getBoundingClientRect();
-  await Bloom.play({from:{x:r.left+r.width/2,y:r.top+r.height/2},color:'pass',hold:450});
   flowNext();
 };
 $('reshuffle').onclick=()=>{if($('grid').classList.contains('done'))return;order=shuffle(order);$('grid').classList.remove('in');setTimeout(()=>render(false),150);};

@@ -10,14 +10,14 @@ CPX 2026 Hackathon · Track 2 (Reverse UX)
 
 ## 体验流程
 
-Neverland 首页 → Gate 入口（start）→ Stage 1 人脸在场验证 → … → 陪审关 → 通行证 → 论坛
+Neverland 首页 → Gate 入口（start）→ Stage 1 人脸在场验证 → Stage 2 图片直觉 → Stage 3 声音 → 获得认证 → 通行证 → 论坛
 
 | 页面 | 内容 |
 | --- | --- |
 | `index.html` | Neverland 首页，Win95 浏览器 + GeoCities 风 |
 | `start.html` | Gate 入口页 |
 | `face.html` | Stage 1：看镜头、眨眼、判定，两次失败后放行 |
-| `jury.html` | 陪审关：判断三份材料是不是人写的 |
+| `certified.html` | Stage 3 之后的认证结果与领取通行证入口 |
 | `pass.html` | 通行证 |
 | `forum.html` | 论坛（常开摄像头） |
 | `flow.js` / `gate.css` | 页面间跳转（`]` 下一页）与 Gate 共用样式 |
@@ -34,7 +34,7 @@ python3 deploy/visitors.py --preview --port 8000 --db "${TMPDIR:-/tmp}/neverland
 
 然后打开 http://127.0.0.1:8000 。
 
-访客完成陪审关后获得全站编号。生产环境由 nginx 保护通行证和论坛，转发取号请求给 `neverland-visitors.service`。服务脚本安装在 `/opt/neverland-visitors/visitors.py`，数据库保存在 `/var/lib/neverland-visitors/visitors.sqlite3`，独立于静态站点发布目录。
+访客完成 Stage 3 声音验证后获得全站编号。生产环境由 nginx 保护通行证和论坛，转发取号请求给 `neverland-visitors.service`。服务脚本安装在 `/opt/neverland-visitors/visitors.py`，数据库保存在 `/var/lib/neverland-visitors/visitors.sqlite3`，独立于静态站点发布目录。
 
 ## 目录
 

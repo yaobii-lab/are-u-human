@@ -2,82 +2,93 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="icon" href="assets/img/logo.png">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="assets/img/logo.png">
+<link rel="preload" href="assets/pass/hand.ttf" as="font" type="font/ttf" crossorigin>
 <title data-i18n="pass.title">Gate · Human Pass</title>
-<!-- 7 · 人类通行证，用 pass-lab.html 的 A 版（证件卡 + 哼歌小人） -->
-<link href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="gate.css">
-<style>
-@font-face{font-family:Lingguang;src:url(assets/fonts/lingguang.ttf) format("truetype");font-display:swap}
-:root{--green:#a6cf5b;--card:#fbfbf9;--hand:Lingguang,"Gochi Hand",cursive}
-.card{position:relative;width:100%;aspect-ratio:1.586;margin-top:56px}
-svg.dd{position:absolute;overflow:visible;pointer-events:none;filter:url(#wob)}
-.dd *{fill:none;stroke-linecap:round;stroke-linejoin:round}
-.dd .fill{fill:var(--card)}
-.draw *{stroke-dasharray:1;stroke-dashoffset:1;animation:ink .6s cubic-bezier(.3,.6,.3,1) forwards}
-@keyframes ink{to{stroke-dashoffset:0}}
-@media (prefers-reduced-motion:reduce){.draw *{animation:none;stroke-dashoffset:0}}
-.hand{font-family:var(--hand)}
-.A{background:var(--card);border-radius:16px;box-shadow:0 1px 0 rgba(0,0,0,.05),0 14px 30px rgba(0,0,0,.1)}
-.A .t{position:absolute;left:18px;top:15px;font-size:22px;line-height:1}
-.A .meta{position:absolute;left:58%;top:34%;font-size:13px;line-height:1.5}
-.A .meta b{font-weight:400;font-size:22px;display:block;line-height:1.1}
-.A .rule{position:absolute;left:18px;right:18px;bottom:12px;border-top:1.5px dashed #c8c8c2;padding-top:7px;font-family:var(--hand);font-size:12px;line-height:1.3}
-.A .rule .zh{display:block;font-size:10.5px;color:var(--sub);margin-top:2px}
-html:lang(en) .A .rule .zh{display:none}
-.basis{margin-top:28px;text-align:center}
-</style>
+<link rel="stylesheet" href="pass.css">
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
-<script src="visitor.js" defer></script>
+<script src="visitor.js"></script>
+<link rel="stylesheet" href="flow.css">
+<script src="flow.js"></script>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="wob"><feTurbulence type="fractalNoise" baseFrequency=".04" numOctaves="2" seed="5"/><feDisplacementMap in="SourceGraphic" scale="1.8"/></filter></svg>
-<iframe class="behind" data-background-page="index.html" tabindex="-1" aria-hidden="true"></iframe>
-<div class="veil"></div>
-<div class="phone">
-  <div class="card A" id="A" aria-label="Human Pass" data-i18n-aria-label="pass.label">
-    <div class="t hand" lang="en">HUMAN PASS</div>
-    <div class="meta hand" lang="en"><b data-pass-number>No.------</b>verified human<br>Neverland</div>
-    <div class="rule" lang="en">you still need to verify at least once every 24 hours to stay human.<span class="zh" lang="zh-CN">要继续当人类，每 24 小时至少要再验证一次。</span></div>
+<main id="scene" data-state="loading">
+  <div class="desk">
+    <div class="sheet">
+      <button id="paper" type="button" disabled data-i18n-aria-label="pass.pickup">
+        <span class="cue" aria-hidden="true">
+          <svg viewBox="0 0 83 50" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <g class="pose p1"><path d="M19 28q3 2 6 6 M42 16l1 10"/></g>
+            <g class="pose p2"><path d="M12 24q5 3 10 10 M41 9q0 8 2 16 M64 19l-6 9"/></g>
+            <g class="pose p3"><path d="M7 18q9 6 15 16 M40 4q0 11 3 20 M72 12q-8 7-13 16"/></g>
+          </svg>
+        </span>
+        <svg class="trails" aria-hidden="true" viewBox="0 0 120 85" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+          <g><path d="M18 10q-5 21 3 38 M36 33q-2 15 4 25 M81 43q9 12 10 23"/></g>
+          <g><path d="M20 16q-2 24 6 36 M39 40q0 12 5 18 M77 29q12 14 16 29"/></g>
+          <g><path d="M25 18q-1 19 6 31 M42 31q0 13 8 25 M83 33q10 14 12 29"/></g>
+        </svg>
+        <canvas id="card" width="1560" height="984" data-i18n-aria-label="pass.label"></canvas>
+      </button>
+    </div>
+    <div id="tools" inert aria-hidden="true">
+      <div class="stamp-tools">
+        <div class="stamp-row" id="palette" role="group" data-i18n-aria-label="pass.choose"></div>
+        <button id="undo" class="ink-action" type="button" hidden data-i18n-aria-label="pass.undo">
+          <svg aria-hidden="true" viewBox="0 0 32 32">
+            <path d="M11.4 5.9c-2 1.7-4 3.8-6.4 6.2 2.1 1.8 4.3 3.4 6.4 5.1 M5.5 12.1c4.3-.6 8.5-.9 12.7-.4 5.1.5 8 3.1 7.6 7.4-.5 5.6-6.2 7.3-12.9 6.1"/>
+          </svg>
+        </button>
+      </div>
+      <div class="actions">
+        <button id="save" class="ink-action" type="button" data-i18n-aria-label="pass.save">
+          <svg aria-hidden="true" viewBox="0 0 46 46">
+            <defs>
+              <filter id="crayon" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+                <feTurbulence type="fractalNoise" baseFrequency=".26" numOctaves="2" seed="9" result="edge"/>
+                <feDisplacementMap in="SourceGraphic" in2="edge" scale="1.6" xChannelSelector="R" yChannelSelector="G" result="pigment"/>
+                <feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="2" seed="5"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 .24 0 0 .84"/>
+                <feComposite in="pigment" operator="in"/>
+              </filter>
+            </defs>
+            <g stroke="#f8d453" stroke-width="7" stroke-opacity=".90" transform="rotate(-13 23 23)" filter="url(#crayon)">
+              <path d="M17 6.6Q23 5.5 29 7 M10 12.4Q22 10 35 12 M6.8 17.7Q22 15.3 38.5 17.5"/>
+              <path d="M5.3 23.3Q21 20.9 39.8 23.4 M7.4 28.5Q23 26.4 38.7 28.3 M10.4 34.4Q25 31.7 35.8 33.2"/>
+              <path d="M15.8 39Q23.8 37.3 30 38"/>
+            </g>
+            <g transform="translate(7 7)">
+            <path d="M16 3.8c-.6 3.5.4 9.9-.2 15.1 M10.7 13.7c1.7 1.6 3.2 3.4 5.1 5.5 2-2.3 3.8-4.2 5.4-5.8"/>
+            <path d="M5.1 20.6c.2 2 .1 3.6.5 5.2 6.9.8 14 .1 20.9.1.4-1.7.4-3.7.5-5.7"/>
+            </g>
+          </svg>
+        </button>
+        <button class="ink-action next" type="button" onclick="flowNext()" data-i18n-aria-label="pass.enter">
+          <svg aria-hidden="true" viewBox="0 0 46 46">
+            <g stroke="#f5aec3" stroke-width="7" stroke-opacity=".90" transform="rotate(10 23 23)" filter="url(#crayon)">
+              <path d="M14.5 8.2Q20 6.1 27.6 6.5 M10.3 13.1Q23 9.7 34 10.9 M6 19Q21 15.1 37.1 16.2"/>
+              <path d="M6.8 24.2Q23 20.8 39.9 21.4 M5.9 29.2Q20 26.4 39.1 26.7 M10 34.7Q22.2 31.5 36.8 32.4"/>
+              <path d="M17 39.8Q25.6 37.1 31.5 37.3"/>
+            </g>
+            <g transform="translate(5.3 7.6) scale(.96)">
+              <path d="M11.7 10.4l.2-5.5q6.6-.5 12.8-.2l.5 21.1q-6.9.5-13.4.1l-.1-4.2"/>
+              <path d="M25.3 4.8l4.5-2.4q.6 12.7.4 25.9l-5-2.4"/>
+              <path d="M2.4 16q6.8-.3 15.8 0 M14 11.7l4.6 4.2q-2.3 2.3-4.8 4.3"/>
+            </g>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
-  <div class="basis">
-    <div class="line" lang="en" data-i18n="pass.basis">You are human.</div>
-  </div>
-  <div class="btns"><button class="pri" type="button" onclick="flowNext()" data-i18n="pass.enter">Enter Neverland</button></div>
-</div>
-<script>i18n.apply(document);</script>
-<script src="flow.js"></script>
-<script>
-const G={
-  // 站着哼歌的小人：头微仰、张嘴，双手插兜感
-  singer:`<circle cx="46" cy="22" r="9" class="fill"/><path d="M50 25 c1.5 1 2.5 1 3.5 0"/><path d="M42 20 l0 1.5"/>
-    <path d="M38 32 C36 44 35 54 37 64 L41 64 L44 46 L47 64 L52 64 C54 52 54 42 52 32 C48 30 42 30 38 32 Z" class="fill"/>
-    <path d="M38 34 C32 42 32 50 38 54 M52 34 C58 40 59 48 54 54"/>
-    <path d="M37 64 L35 86 L41 86 L43 66 M48 66 L50 86 L56 86 L52 64"/><path d="M33 87 L41 87 M50 87 L58 87"/>`,
-  notes:`<ellipse cx="10" cy="40" rx="5.5" ry="4" transform="rotate(-20 10 40)"/><path d="M15 38 L14.5 12 C22 10 30 8 37 6 L37.5 32"/><ellipse cx="32" cy="34" rx="5.5" ry="4" transform="rotate(-20 32 34)"/><path d="M15 18 C22 16 30 14 37 12"/>`,
-  note:`<ellipse cx="12" cy="38" rx="6" ry="4.5" transform="rotate(-20 12 38)"/><path d="M17.5 36 L17 8 C23 12 29 14 28 22"/>`,
-  // 树（外轮廓一笔）+ 躺着的人 + 杯子
-};
-function draw(el,k,{x,y,w,vb=100,rot=0,color='var(--ink)',sw=1.6,delay=0,anim=true}){
-  const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  s.setAttribute('viewBox',`0 0 ${vb} ${vb}`);s.setAttribute('class','dd'+(anim?' draw':''));
-  Object.assign(s.style,{left:x,top:y,width:w+'px',height:w+'px',transform:`rotate(${rot}deg)`});
-  s.innerHTML=`<g stroke="${color}" stroke-width="${sw*vb/w*1.9}">${G[k]}</g>`;
-  if(anim)s.querySelectorAll('g *').forEach((p,i)=>{p.setAttribute('pathLength',1);p.style.animationDelay=(delay+i*.09)+'s'});
-  el.appendChild(s);return s;
-}
-function build(){
-  document.querySelectorAll('.dd').forEach(n=>n.remove());
-  const A=document.getElementById('A');
-  const k=Math.min(1.3,(A.clientWidth/474)**1.5);
-  draw(A,'singer',{x:'8%',y:'17%',w:165*k,delay:.1});
-  draw(A,'notes',{x:200*k+'px',y:'31%',w:46*k,vb:50,rot:6,color:'var(--green)',sw:1.8,delay:.9});
-  draw(A,'note',{x:256*k+'px',y:'23%',w:26*k,vb:50,rot:-10,color:'var(--green)',sw:1.8,delay:1.2});
-  draw(A,'note',{x:'84%',y:'8%',w:22,vb:50,rot:12,color:'var(--ink)',delay:1.4});
-}
-document.fonts.ready.then(build);
-</script>
+</main>
+<dialog id="preview" aria-labelledby="saveHint">
+  <p id="saveHint" data-i18n="pass.hold"></p>
+  <img id="savedImage" data-i18n-alt="pass.label">
+  <button id="closePreview" type="button" data-i18n="pass.back"></button>
+</dialog>
+<script src="eyes.js" data-mount="#scene" data-scene="pass" data-initial="pass"></script>
+<script src="pass.js"></script>
 </body>
 </html>

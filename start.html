@@ -58,6 +58,8 @@ html:lang(zh-CN) .lead{font-family:PortalSong,"Songti SC",serif}
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
+<link rel="stylesheet" href="flow.css">
+<script src="flow.js"></script>
 </head>
 <body>
 <nav class="languages" aria-label="Language" data-i18n-aria-label="start.language">
@@ -83,19 +85,16 @@ html:lang(zh-CN) .lead{font-family:PortalSong,"Songti SC",serif}
   </div>
 </div>
 
+<script src="eyes.js" data-scene="start"></script>
 <script>i18n.apply(document);</script>
-<script src="flow.js"></script>
-<script src="bloom.js"></script>
 <script>
 const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
-$('start').onclick=()=>{$('scrim').classList.add('on');$('scrim').setAttribute('aria-hidden','false');setTimeout(()=>$('box').focus(),300);};
+$('start').onclick=()=>{Eyes.set('scrutinize');Eyes.lookAt($('box'));$('scrim').classList.add('on');$('scrim').setAttribute('aria-hidden','false');setTimeout(()=>$('box').focus(),300);};
 let done=false;
-$('box').onclick=async()=>{if(done)return;done=true;
+$('box').onclick=async()=>{if(done)return;done=true;Eyes.set('pass');
   $('cap').classList.add('ok');            // passes the instant you click
   await wait(420);
-  const from=$('box').getBoundingClientRect();
   $('scrim').classList.remove('on');
-  await Bloom.play({from:{x:from.left+from.width/2,y:from.top+from.height/2},color:'pass',text:'#fff',hold:450});
   flowNext();
 };
 </script>

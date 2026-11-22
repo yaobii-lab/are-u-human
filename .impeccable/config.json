@@ -62,6 +62,42 @@
         ],
         "createdAt": "2026-11-22T03:38:59.214Z",
         "reason": "Claude: the blinking dot shows only while the microphone is actually recording, a genuine live state"
+      },
+      {
+        "rule": "radial-halo",
+        "value": "*",
+        "files": [
+          "stage3.html"
+        ],
+        "createdAt": "2026-11-22T03:52:31.761Z",
+        "reason": "Yaobii asked for the glowing flowing gradient from her reference images (AI voice assistant orb) in this session"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "pass.html"
+        ],
+        "createdAt": "2026-11-22T04:11:47.508Z",
+        "reason": "Codex review: the printed pass uses absolute offsets for its text. In Chrome at 320, 375 and 1280px in both locales, text bounds are at least 18px from the left, 35px from the right and 13px from the bottom of the card."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "pass.html"
+        ],
+        "createdAt": "2026-11-22T04:14:28.280Z",
+        "reason": "Codex verified savedImage is in a closed dialog. longPressImage assigns the card PNG before showModal; touch fallback decoded the actual 1560x984 preview."
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "stage3.html"
+        ],
+        "createdAt": "2026-11-22T04:15:18.197Z",
+        "reason": "Yaobii asked for the glowing light field from her AI voice assistant reference images in this session"
       }
     ]
   }
