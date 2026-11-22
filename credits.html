@@ -11,37 +11,37 @@
 @font-face{font-family:EpilogueHand;src:url(assets/fonts/epilogue-hand.ttf) format("truetype");font-display:swap}
 @font-face{font-family:PassHandHan;src:url(assets/fonts/lingguang-cjk.woff2) format("woff2");unicode-range:U+2E80-2FFF,U+3000-303F,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;font-display:swap}
 *{box-sizing:border-box}
-html{background:#000;color-scheme:dark}
-body{--side:clamp(32px,7vw,88px);--foot:clamp(24px,5svh,52px);--paper:#eeeae3;--serif:Georgia,'Songti SC','Noto Serif CJK SC',SimSun,serif;--sans:Inter,system-ui,sans-serif;margin:0;background:#000;color:var(--paper);font-family:var(--serif)}
-main{width:min(42rem,calc(100% - 2 * var(--side)));margin:auto;padding:clamp(68px,11svh,132px) 0 0;opacity:0;visibility:hidden;transition:opacity 2.8s ease-in-out}
+html{--screen:#121313;background:var(--screen);color-scheme:dark}
+body{--side:clamp(32px,7vw,88px);--foot:clamp(24px,5svh,52px);--paper:#bcbab4;--serif:Georgia,'Songti SC','Noto Serif CJK SC',SimSun,serif;--sans:Inter,system-ui,sans-serif;margin:0;background:var(--screen);color:var(--paper);font-family:var(--serif)}
+main{width:min(42rem,calc(100% - 2 * var(--side)));margin:auto;padding:clamp(100px,29svh,320px) 0 0;opacity:0;visibility:hidden;transition:opacity 2.8s ease-in-out}
 body.reading main,body.reading .production{opacity:1;visibility:visible}
-main header{text-align:center;font-family:EpilogueHand,cursive;margin-bottom:clamp(32px,4vw,56px)}
+main header{text-align:center;font-family:EpilogueHand,cursive;margin-bottom:clamp(48px,10svh,100px)}
 h1,p,blockquote{margin:0}
-h1{font-size:clamp(50px,5.3vw,76px);line-height:1.08;font-weight:400;letter-spacing:0}
+h1{font-size:clamp(44px,4.6vw,66px);line-height:1.08;font-weight:400;letter-spacing:0}
 html:lang(zh) h1{letter-spacing:.035em}
-.subtitle{margin-top:5px;font-size:clamp(23px,2.2vw,31px);line-height:1.15;color:#c9c5be}
-.copy{font-size:clamp(17px,1.38vw,20px);line-height:1.62;color:#d5d1ca;overflow-wrap:break-word}
-html:lang(zh) .copy{line-height:1.92;line-break:strict}
-.copy p+p:not(.refrain){margin-top:1.05em}
-.refrain{margin:1.15em 0;color:var(--paper);font-size:clamp(28px,3.1vw,44px);line-height:1.14;letter-spacing:-.035em}
-.refrain span{display:block}
-blockquote{max-width:28em;margin-top:1.55em;color:var(--paper);font-size:clamp(22px,2.15vw,30px);line-height:1.45;text-wrap:balance}
-html:lang(en) blockquote{font-style:italic}
-.production{width:min(100%,40rem);margin:0 auto;padding:clamp(80px,12vh,140px) var(--side) calc(110px + var(--foot));opacity:0;visibility:hidden;text-align:center}
+.subtitle{margin-top:5px;font-size:clamp(21px,2vw,27px);line-height:1.15;color:#96958f}
+.copy{max-width:36em;margin-inline:auto;color:#c4c2bc;font:400 clamp(1.125rem,1.5vw,1.3125rem)/1.7 var(--serif);text-align:center;text-wrap:balance;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+html:lang(zh) .copy{max-width:26em;font-size:clamp(1.1875rem,1.6vw,1.375rem);line-height:1.9;letter-spacing:.02em;line-break:strict;word-break:keep-all}
+.copy>div+div{margin-top:clamp(52px,9svh,88px)}
+.copy p+p{margin-top:1.1em}
+.copy blockquote{max-width:34ch;margin:clamp(60px,12svh,124px) auto 0;color:#dddbd5;font-size:1.16em;line-height:1.65;text-align:center;text-wrap:balance}
+html:lang(zh) blockquote{max-width:21em}
+@media(max-width:600px){main{width:calc(100% - 2 * clamp(20px,6vw,32px))}html:lang(zh) .copy{word-break:normal}}
+.production{width:min(100%,40rem);margin:0 auto;padding:clamp(120px,38svh,420px) var(--side) calc(110px + var(--foot));opacity:0;visibility:hidden;text-align:center}
 .production h2{margin:0 0 22px;font:500 13px/1.5 var(--sans);letter-spacing:.14em;color:#b8b4ad}
 .production ul{list-style:none;margin:0;padding:0;font-size:clamp(25px,3.1vw,42px);line-height:1.27;letter-spacing:-.025em}
-.thanks{margin:28px auto 0;max-width:37ch;font-size:16px;line-height:1.65;color:#c5c1ba;text-wrap:balance}
+.thanks{margin:28px auto 0;max-width:37ch;font-size:16px;line-height:1.65;color:#a2a19a;text-wrap:balance}
 html:lang(zh) .thanks{max-width:23em}
 .visitors{margin-top:clamp(72px,11vh,120px)}
 .visitors ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-.visitors li{display:grid;grid-template-columns:1fr 1fr;align-items:baseline;column-gap:1.1em;color:#d5d1ca}
+.visitors li{display:grid;grid-template-columns:1fr 1fr;align-items:baseline;column-gap:1.1em;color:var(--paper)}
 .visitors .no{text-align:right}
 .visitors .who{text-align:left}
 .visitors .no{font:400 12px/1 var(--sans);letter-spacing:.08em;color:#8f8b85;font-variant-numeric:tabular-nums}
 .visitors .who{font:400 clamp(24px,2.6vw,32px)/1.3 EpilogueHand,PassHandHan,cursive;overflow-wrap:anywhere}
-.visitors .mine .who{color:#fff}
-.visitors .mine .no{color:#d5d1ca}
-.visitors .you{margin-left:.6em;font:400 12px/1 var(--sans);color:#d5d1ca}
+.visitors .mine .who{color:#d0cfc9}
+.visitors .mine .no{color:var(--paper)}
+.visitors .you{margin-left:.6em;font:400 12px/1 var(--sans);color:var(--paper)}
 body.rolling{padding-bottom:var(--production-height)}
 body.rolling .production{position:fixed;inset:0;margin:auto;height:fit-content;padding:0 var(--side);pointer-events:none}
 
@@ -49,7 +49,7 @@ body.rolling .production{position:fixed;inset:0;margin:auto;height:fit-content;p
 #roll span{position:absolute;left:max(var(--side),env(safe-area-inset-left));bottom:calc(max(var(--foot),env(safe-area-inset-bottom)) + 12px);font:400 12px/1.55 system-ui,sans-serif}
 #roll:focus-visible{outline:0}
 #roll:focus-visible span{text-decoration:underline}
-footer{z-index:2;background:#000;justify-content:flex-end;padding:0 max(var(--side),env(safe-area-inset-right)) max(var(--foot),env(safe-area-inset-bottom)) var(--side)}
+footer{z-index:2;background:var(--screen);justify-content:flex-end;padding:0 max(var(--side),env(safe-area-inset-right)) max(var(--foot),env(safe-area-inset-bottom)) var(--side)}
 @media(max-width:760px){#roll span{bottom:calc(max(var(--foot),env(safe-area-inset-bottom)) + 58px)}}
 footer{position:fixed;inset:auto 0 0;display:flex;align-items:center;gap:5px;color:#aaa7a1;pointer-events:none}
 #sound{pointer-events:auto}
@@ -57,7 +57,7 @@ body.rolling footer{background:transparent}
 .sound-credit{font:400 12px/1.55 system-ui,sans-serif;text-align:right;text-wrap:balance}
 .sound-credit i{white-space:nowrap}
 #sound{flex:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;background:none;color:inherit;cursor:pointer}
-#sound:hover{color:#fff}
+#sound:hover{color:#d0cfc9}
 #sound:focus-visible{outline:1px solid currentColor;outline-offset:-4px}
 #sound svg{width:18px;height:18px}
 #sound svg,footer[hidden],.sound-credit[hidden]{display:none}
@@ -74,11 +74,11 @@ body.rolling footer{background:transparent}
     <p class="subtitle" lang="en" data-i18n="credits.kicker"></p>
   </header>
   <div class="copy">
-    <p data-i18n="credits.note"></p>
-    <p data-i18n="credits.world"></p>
-    <p data-i18n="credits.experiment"></p>
-    <p data-i18n="credits.friction"></p>
-    <p data-i18n="credits.last"></p>
+    <div data-i18n-html="credits.note"></div>
+    <div data-i18n-html="credits.world"></div>
+    <div data-i18n-html="credits.experiment"></div>
+    <div data-i18n-html="credits.friction"></div>
+    <div data-i18n-html="credits.last"></div>
     <blockquote data-i18n="credits.line"></blockquote>
   </div>
 </main>
@@ -253,8 +253,8 @@ listVisitors().catch(() => {});
 // Let readers finish the note on short screens before the soundtrack starts the roll.
 const rehearsal = new URLSearchParams(location.search).get('preview') === 'transition';
 // Keep a fractional position so the reading speed is independent of the display refresh rate.
-const openingHoldMs = 5000;
-const readingPixelsPerSecond = 18;
+const openingHoldMs = 1800;
+const readingPixelsPerSecond = 15;
 let readingFrame;
 function startReadingScroll(){
   let elapsed = 0;
@@ -269,7 +269,7 @@ function startReadingScroll(){
       const movingMs = elapsed - Math.max(previousElapsed, openingHoldMs);
       const documentEnd = document.scrollingElement.scrollHeight - innerHeight;
       // With music, leave the closing line on screen until the production roll takes over.
-      const limit = music.paused ? documentEnd : Math.min(documentEnd, epilogue.offsetTop + epilogue.offsetHeight - innerHeight * 0.65);
+      const limit = music.paused ? documentEnd : Math.min(documentEnd, epilogue.offsetTop + epilogue.offsetHeight - innerHeight * 0.56);
       if(offset < limit){
         offset = Math.min(limit, offset + readingPixelsPerSecond * movingMs / 1000);
         window.scrollTo(0, offset);
@@ -289,12 +289,16 @@ window.addEventListener('keydown', event => {
   if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key)) stopReadingScroll();
 });
 let reachedClosing = false;
-new IntersectionObserver(([entry]) => {
-  if (entry.intersectionRatio >= 0.8) {
+// Give the final line a reading beat even if the second track has already begun.
+const closingObserver = new IntersectionObserver(([entry]) => {
+  if(entry.intersectionRatio < 0.8) return;
+  closingObserver.disconnect();
+  setTimeout(() => {
     reachedClosing = true;
     followMusic();
-  }
-}, {threshold: 0.8}).observe(document.querySelector('blockquote'));
+  }, 6000);
+}, {threshold:0.8});
+closingObserver.observe(document.querySelector('blockquote'));
 
 function followMusic(){
   if(music.currentTime >= 4){

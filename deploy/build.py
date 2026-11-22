@@ -37,7 +37,8 @@ for host, pages in groups.items():
         shutil.copyfile(source / name, root / name)
     shutil.copytree(source / "i18n", root / "i18n")
     if "pass.html" in pages:
-        shutil.copyfile(source / "eyes-lab.html", root / "eyes-lab.html")
+        for name in ("eyes-lab.html", "refuse-lab.html"):
+            shutil.copyfile(source / name, root / name)
         for directory in ("stage2-header-lab", "briefs/ref/out/align"):
             shutil.copytree(source / directory, root / directory)
         for name in ["pass.js", "pass.css"]:

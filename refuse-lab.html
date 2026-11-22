@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="assets/img/logo.png">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Refuse Lab</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="assets/fonts/portal/fonts.css">
+<style>
+/* 草图：人脸验证卡上加「拒绝」，拒绝要确认三次，第四步放行。不开摄像头。 */
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:#fff;color:var(--text);font-family:Inter,PortalSans,"PingFang SC",sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+.lens{position:fixed;left:50%;top:18vh;transform:translateX(-50%);width:min(240px,62vw);aspect-ratio:1;border-radius:50%;background:var(--brand-100);transition:opacity .5s,transform .6s var(--ease-out)}
+body.refused .lens{opacity:.25;transform:translateX(-50%) scale(.8)}
+
+.gate{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 16px 28px}
+.card{width:min(360px,100%);background:#fff;border-radius:var(--r-lg);padding:24px 22px;box-shadow:0 12px 40px rgba(16,38,47,.16);text-align:center;transition:transform .35s var(--ease-out)}
+.card.shake{animation:shake .35s ease-out}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}60%{transform:translateX(5px)}}
+.gicon{display:block;margin:0 auto 12px;filter:invert(30%) sepia(40%) saturate(700%) hue-rotate(155deg)}
+h1{font-weight:400;font-size:var(--fs-lead);margin:0 0 6px;letter-spacing:-.01em}
+p{margin:0;font-size:var(--fs-body);color:var(--gray-700);line-height:1.45}
+.local{margin:18px 0;padding-top:12px;border-top:1px solid var(--line);font:400 24px/1.1 PortalPixel,"PingFang SC",sans-serif;color:var(--danger);text-wrap:balance}
+.count{font-size:var(--fs-caption);color:var(--gray-500);margin:14px 0 0;font-variant-numeric:tabular-nums;min-height:16px}
+
+.acts{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:18px}
+button{font:500 var(--fs-body) inherit;font-family:inherit;cursor:pointer;border:0}
+.pri{height:var(--btn-h,52px);width:100%;border-radius:var(--r-pill);background:var(--accent);color:#fff;transition:height .35s var(--ease-out),font-size .35s var(--ease-out)}
+.pri:hover{background:var(--accent-hover)}
+.pri:active{transform:scale(.98)}
+.no{background:none;color:var(--gray-500);font-size:var(--fs-small);font-weight:400;padding:10px 12px;text-decoration:underline;text-underline-offset:3px}
+.no:hover{color:var(--text)}
+/* 第三次：「再想想」变得很大，「确定拒绝」不变、照样能点 */
+.r3 .pri{height:96px;font-size:24px}
+.pri:focus-visible,.no:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+.swap{transition:opacity .18s}
+.card.fade .swap{opacity:0}
+
+.note{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--gray-500)}
+.note button{font-size:12px;color:var(--accent);background:none;padding:6px}
+.toast{position:fixed;top:44px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;padding:8px 14px;border-radius:var(--r-pill);opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.card.shake{animation:none}.pri,.lens{transition:none}}
+</style>
+</head>
+<body>
+<div class="note"><span>草图 · 拒绝摄像头 · 11-22</span><button type="button" id="reset">从头再来</button></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="lens" aria-hidden="true"></div>
+
+<div class="gate"><div class="card" id="card" role="dialog" aria-labelledby="t">
+  <img class="gicon" src="assets/svg/scan-face.svg" alt="" width="48" height="48">
+  <div class="swap">
+    <h1 id="t"></h1>
+    <p id="body"></p>
+    <p class="local" id="local">所有数据均在本地处理。</p>
+    <div class="count" id="count"></div>
+  </div>
+  <div class="acts">
+    <button type="button" class="pri" id="yes"></button>
+    <button type="button" class="no" id="no"></button>
+  </div>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+// 0 = 原来的提示卡；1–3 = 确认拒绝；4 = 放行
+const steps=[
+  {t:'人脸验证',b:'点「确定」开启摄像头，然后将脸对准圆框。',local:true,yes:'确定',no:'我不想开摄像头'}, // en: "No, I won't"
+  {t:'确定要拒绝吗？',b:'摄像头只是想看你一眼。',yes:'再想想',no:'确定拒绝',n:'拒绝确认 1/3'},
+  {t:'Gate 已收到你的拒绝',b:'并为此难过了 0.3 秒。确定吗？',yes:'好吧，再想想',no:'确定拒绝',n:'拒绝确认 2/3'},
+  {t:'根据规定，拒绝须确认三次',b:'这是第三次。我们对此深感抱歉。',yes:'再想想',no:'第三次确定',n:'拒绝确认 3/3',cls:'r3'},
+  {t:'拒绝已批准',b:'你可能是人类，也可能是一个非常坚定的机器人。请继续。',yes:'继续',no:'',done:true},
+];
+let i=0;
+function show(k){
+  const c=$('card');c.classList.add('fade');
+  setTimeout(()=>{
+    i=k;const s=steps[k];
+    $('t').textContent=s.t;$('body').textContent=s.b;
+    $('local').hidden=!s.local;
+    $('count').textContent=s.n||'';
+    $('yes').textContent=s.yes;
+    $('no').textContent=s.no;$('no').hidden=!s.no;
+    c.className='card'+(s.cls?' '+s.cls:'');
+    document.body.classList.toggle('refused',!!s.done);
+    if(k>=2&&k<=3){c.classList.add('shake');}
+  },k===0&&!c.dataset.ready?0:180);
+  c.dataset.ready=1;
+}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200);}
+// 「再想想」回到原来的提示卡，不会直接开摄像头
+$('yes').onclick=()=>{
+  if(i===0)toast('草图：这里会开摄像头，走原来的流程');
+  else if(steps[i].done)toast('草图：这里接不开摄像头的那条路（待定）');
+  else show(0);
+};
+$('no').onclick=()=>show(i+1);
+$('reset').onclick=()=>show(0);
+show(0);
+</script>
+</body>
+</html>
