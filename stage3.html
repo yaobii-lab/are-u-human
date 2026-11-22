@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="tokens.css">
 <style>
-/* Stage 3 · Voice. Two looks on one flow, picked with ?v=call | ?v=form (or the review panel):
+/* Stage 3 · Voice. Two looks on one flow, picked with ?v=call | ?v=form:
    call = Gate phones you, an automated voice line gives instructions;
    form = a printed voiceprint check form that gets a red stamp.
    Round 1: read it in a described tone, always rejected (too flat = TTS, too much = acting).
@@ -125,16 +125,6 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
 .v-form #go.stop{background:var(--bad)}
 .v-form .golb{display:none}
 
-/* review panel */
-.dev{position:fixed;right:12px;bottom:12px;z-index:9;width:240px;background:rgba(255,255,255,.97);color:#141414;border:1px solid #c9cfd2;border-radius:10px;padding:12px;font:12px var(--font-body);box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.dev b{display:block;font-size:11px;color:#5b6266;font-weight:500;margin:8px 0 4px}
-.dev .row{display:flex;gap:6px;flex-wrap:wrap}
-.dev .row button{font:11px var(--font-body);padding:4px 8px;border:1px solid #c9cfd2;background:#fff;border-radius:4px;cursor:pointer}
-.dev .row button[aria-pressed="true"]{background:#141414;color:#fff;border-color:#141414}
-.dev .x{position:absolute;top:6px;right:8px;border:0;background:none;cursor:pointer;color:#5b6266}
-.dev.min{width:auto;padding:6px 10px}.dev.min>*:not(.x):not(.ttl){display:none}
-.dev .ttl{font-weight:600;font-size:12px;margin-bottom:4px;padding-right:20px}
-@media (max-width:760px){.dev{left:12px;right:12px;width:auto}.has-dev .app{padding-bottom:72px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <script src="i18n/messages.js"></script>
@@ -200,22 +190,6 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
   </div>
 </main>
 
-<aside class="dev" id="dev">
-  <button class="x" id="devx" type="button" aria-label="Collapse" data-i18n-aria-label="quiz.collapse">–</button>
-  <div class="ttl" data-i18n="preview.panel">看稿面板</div>
-  <b data-i18n="voice.style">风格</b>
-  <div class="row">
-    <button type="button" data-v="call" data-i18n="voice.styleCall">来电</button>
-    <button type="button" data-v="form" data-i18n="voice.styleForm">检测单</button>
-  </div>
-  <b data-i18n="preview.simulate">直接看反馈</b>
-  <div class="row">
-    <button type="button" data-sim="flat" data-i18n="voice.simFlat">平</button>
-    <button type="button" data-sim="over" data-i18n="voice.simOver">起伏大</button>
-    <button type="button" data-sim="normal" data-i18n="voice.simNormal">正常</button>
-  </div>
-</aside>
-
 <script>i18n.apply(document);</script>
 <script src="flow.js"></script>
 <script src="bloom.js"></script>
@@ -231,7 +205,6 @@ let round=0,env=[],ctx=null,an=null,stream=null,t0=0,raf=0,floor=-60;
 const params=new URLSearchParams(location.search);
 function setLook(v){
   document.body.className='v-'+v;
-  document.querySelectorAll('[data-v]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));
   try{localStorage.setItem('voice-look',v);}catch{}
   draw();
 }
@@ -373,23 +346,6 @@ $('go').onclick=async()=>{
   flowNext();
 };
 
-/* ---------- review panel: fake a reading without a mic ---------- */
-function fake(kind){
-  if($('go').dataset.kind==='retry')setRound(1);
-  floor=-62;env=[];
-  for(let i=0;i<8;i++)env.push({db:-62+Math.random()*2,sp:false});
-  const n=kind==='flat'?22:kind==='over'?30:26;
-  for(let i=0;i<n;i++){const x=i/n,shape=Math.sin(x*Math.PI)*(1+.6*Math.sin(x*11));
-    const db=kind==='flat'?-30+Math.random()*3:kind==='over'?-42+shape*30+Math.random()*6:-36+shape*16+Math.random()*4;
-    env.push({db,sp:true});}
-  for(let i=0;i<10;i++)env.push({db:-61+Math.random()*2,sp:false});
-  cancelAnimationFrame(raf);$('app').classList.remove('rec');judge(measure());
-}
-document.querySelectorAll('[data-sim]').forEach(b=>b.onclick=()=>fake(b.dataset.sim));
-document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>setLook(b.dataset.v));
-$('devx').onclick=()=>$('dev').classList.toggle('min');
-if(params.has('nodev'))$('dev').hidden=true;else document.documentElement.classList.add('has-dev');
-if(innerWidth<760)$('dev').classList.add('min');
 addEventListener('resize',()=>draw());
 setLook(look);setRound(0);
 </script>

@@ -1,4 +1,4 @@
-// Shared order of the experience. "]" jumps to the next page, "[" to the previous (for rehearsing without a camera).
+// Shared navigation for the verification flow.
 (function(){
   var ORDER=['index.html','start.html','face.html','stage2.html','stage3.html','jury.html','pass.html','forum.html','credits.html'];
   var portal = location.hostname === 'portal.ariari.art';
@@ -23,9 +23,4 @@
   function idx(){var i=ORDER.indexOf(here());return i<0?0:i;}
   window.flowNext=function(){var i=idx();if(i<ORDER.length-1)location.href=destination(ORDER[i+1]);};
   window.flowPrev=function(){var i=idx();if(i>0)location.href=destination(ORDER[i-1]);};
-  addEventListener('keydown',function(e){
-    if(e.target&&/INPUT|TEXTAREA/.test(e.target.tagName))return;
-    if(e.key===']')flowNext();
-    if(e.key==='[')flowPrev();
-  });
 })();

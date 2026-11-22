@@ -22,7 +22,7 @@ if (window.self === window.top) {{
 </script>"""
 groups = {
     "ariari.art": ["index.html", "forum.html"],
-    "portal.ariari.art": ["start.html", "face.html", "stage2.html", "stage3.html", "stage.html", "jury.html", "pass.html", "credits.html"],
+    "portal.ariari.art": ["start.html", "face.html", "stage2.html", "stage3.html", "jury.html", "pass.html", "credits.html"],
 }
 for host, pages in groups.items():
     root = args.output / host
