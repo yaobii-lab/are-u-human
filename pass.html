@@ -30,6 +30,7 @@ html:lang(en) .A .rule .zh{display:none}
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
+<script src="visitor.js" defer></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="wob"><feTurbulence type="fractalNoise" baseFrequency=".04" numOctaves="2" seed="5"/><feDisplacementMap in="SourceGraphic" scale="1.8"/></filter></svg>
@@ -38,7 +39,7 @@ html:lang(en) .A .rule .zh{display:none}
 <div class="phone">
   <div class="card A" id="A" aria-label="Human Pass" data-i18n-aria-label="pass.label">
     <div class="t hand" lang="en">HUMAN PASS</div>
-    <div class="meta hand" lang="en"><b>No.0047</b>verified human<br>Neverland</div>
+    <div class="meta hand" lang="en"><b data-pass-number>No.------</b>verified human<br>Neverland</div>
     <div class="rule" lang="en">you still need to verify at least once every 24 hours to stay human.<span class="zh" lang="zh-CN">要继续当人类，每 24 小时至少要再验证一次。</span></div>
   </div>
   <div class="basis">

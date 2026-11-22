@@ -29,10 +29,12 @@ Neverland 首页 → Gate 入口（start）→ Stage 1 人脸在场验证 → �
 摄像头需要 localhost 或 https：
 
 ```bash
-python3 -m http.server 8000
+python3 deploy/visitors.py --preview --port 8000 --db "${TMPDIR:-/tmp}/neverland-preview.sqlite3"
 ```
 
-然后打开 http://localhost:8000 。
+然后打开 http://127.0.0.1:8000 。
+
+访客完成陪审关后获得全站编号。生产环境由 nginx 保护通行证和论坛，转发取号请求给 `neverland-visitors.service`。服务脚本安装在 `/opt/neverland-visitors/visitors.py`，数据库保存在 `/var/lib/neverland-visitors/visitors.sqlite3`，独立于静态站点发布目录。
 
 ## 目录
 

@@ -1,0 +1,15 @@
+[Unit]
+Description=Neverland certified visitor registry
+After=network.target
+
+[Service]
+DynamicUser=yes
+StateDirectory=neverland-visitors
+ExecStart=/usr/bin/python3 /opt/neverland-visitors/visitors.py --db /var/lib/neverland-visitors/visitors.sqlite3
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

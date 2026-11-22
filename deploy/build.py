@@ -33,7 +33,7 @@ for host, pages in groups.items():
             dest = root / asset.relative_to(source)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(asset, dest)
-    for name in ["flow.js", "i18n.js", "gate.css", "tokens.css", "bloom.js"]:
+    for name in ["visitor.js", "flow.js", "i18n.js", "gate.css", "tokens.css", "bloom.js"]:
         shutil.copyfile(source / name, root / name)
     shutil.copytree(source / "i18n", root / "i18n")
     for name in pages:

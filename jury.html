@@ -32,7 +32,7 @@
 <iframe class="behind" data-background-page="index.html" tabindex="-1" aria-hidden="true"></iframe>
 <div class="veil"></div>
 <div class="phone">
-  
+
   <section id="ask">
     <div class="head">
             <div class="line" data-i18n="jury.last">One last question.</div>
@@ -47,12 +47,14 @@
     <div class="count" id="count">0 / 3</div>
   </section>
 
+  <p id="registry-error" role="alert" hidden></p>
   <div class="btns">
     <button class="pri" type="button" id="submit" disabled data-i18n="jury.submit">Submit</button>
     <button type="button" id="vouch" hidden data-i18n="jury.vouch">I vouch this person is human</button>
   </div>
 </div>
 <script>i18n.apply(document);</script>
+<script src="visitor.js"></script>
 <script src="flow.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -72,17 +74,54 @@ M.forEach((m,i)=>{
   });
   $('cards').appendChild(c);
 });
-$('submit').onclick=()=>{
+let votes = 0;
+async function record(button, action, data) {
+  button.disabled = true;
+  $('registry-error').hidden = true;
+  try {
+    return await visitorRequest(action, data);
+  } catch {
+    $('registry-error').textContent = t('jury.retry');
+    $('registry-error').hidden = false;
+    button.disabled = false;
+  }
+}
+function showVotes(total) {
+  votes = total;
+  document.querySelectorAll('.dots i').forEach((dot, i) => dot.classList.toggle('on', i < votes));
+  $('count').textContent = votes + ' / 3';
+}
+$('submit').onclick = async () => {
+  const buttons = document.querySelectorAll('.seg button');
+  buttons.forEach(button => button.disabled = true);
+  const result = await record($('submit'), 'jury', {answers: M.map((_, i) => pick[i])});
+  if (!result) { buttons.forEach(button => button.disabled = false); return; }
   M.forEach((m,i)=>{const c=$('c'+i);c.classList.add('reveal',m.who==='human'?'hu':'ag');c.querySelector('.src').textContent=m.src+' · '+(m.who==='human'?t('jury.human'):t('jury.agent'));});
-  $('submit').disabled=true;
-  if(M.every((m,i)=>pick[i]===m.who)){setTimeout(()=>flowNext(),2600);return;}
-  setTimeout(()=>{$('ask').style.display='none';$('wait').style.display='block';$('submit').hidden=true;$('vouch').hidden=false;$('vouch').focus();},2600);
+  if (result.number) {
+
+    setTimeout(flowNext, 2600);
+    return;
+  }
+
+  showVotes(result.votes);
+  setTimeout(() => {
+    $('ask').style.display = 'none';
+    $('wait').style.display = 'block';
+    $('submit').hidden = true;
+    $('vouch').hidden = false;
+    $('vouch').focus();
+  }, 2600);
 };
-let n=0;
-$('vouch').onclick=()=>{
-  if(n>=3)return;
-  document.querySelectorAll('.dots i')[n].classList.add('on');n++;$('count').textContent=n+' / 3';
-  if(n===3){$('vouch').disabled=true;setTimeout(()=>flowNext(),1200);}
+$('vouch').onclick = async () => {
+  const result = await record($('vouch'), 'vouch', {step: votes + 1});
+  if (!result) return;
+  showVotes(result.number ? 3 : result.votes);
+  if (result.number) {
+
+    setTimeout(flowNext, 1200);
+  } else {
+    $('vouch').disabled = false;
+  }
 };
 </script>
 </body>

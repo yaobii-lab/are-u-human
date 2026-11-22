@@ -158,6 +158,7 @@ h1{margin:0;font-size:clamp(40px,6.4vw,72px);font-weight:700;color:var(--ink);te
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
+<script src="visitor.js" defer></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -249,7 +250,7 @@ h1{margin:0;font-size:clamp(40px,6.4vw,72px);font-weight:700;color:var(--ink);te
         </div>
 
         <div class="foot">
-          <span data-i18n="retro.visitor">You are visitor No.</span> <span class="counter" id="counter"></span><br>
+          <span data-i18n="retro.visitor">You are visitor No.</span> <span class="counter" id="counter">------</span><br>
           <span data-i18n="retro.footer">Best viewed with Navigator 4.0 at 800x600 · Last updated 11/22/2040</span><br>
           <div class="badges" lang="en" aria-hidden="true">
             <span class="badge" style="background:#ffff00" data-i18n-html="retro.100_human_br_made">100% HUMAN<br>MADE</span>
@@ -385,9 +386,6 @@ h1{margin:0;font-size:clamp(40px,6.4vw,72px);font-weight:700;color:var(--ink);te
     svg.innerHTML=o;
   });
 
-  var n=38;
-  try{n=(parseInt(localStorage.getItem('neverland-visits')||'37',10)||37)+1;localStorage.setItem('neverland-visits',String(n));}catch(e){}
-  document.getElementById('counter').innerHTML=String(n).padStart(6,'0').split('').map(function(d){return '<b>'+d+'</b>';}).join('');
 
   function clock(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
   clock();setInterval(clock,30000);

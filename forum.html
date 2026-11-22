@@ -157,6 +157,7 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
 </style>
 <script src="i18n/messages.js"></script>
 <script src="i18n.js"></script>
+<script src="visitor.js" defer></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -215,7 +216,7 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
         <img class="hand" src="assets/img/wave.gif" alt="">
       </div>
 
-      <p class="tag" data-i18n-html="forum.welcome">Welcome back, <em class="hot">Visitor #0047</em>.</p>
+      <p class="tag" data-visitor-welcome>Welcome back, <em class="hot">Visitor #------</em>.</p>
       <p class="tag2" data-i18n="forum.camera">Your camera must stay on while you are here.</p>
 
       <table class="board" cellpadding="6">
@@ -234,7 +235,7 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
       </div>
 
       <div class="foot">
-        <span data-i18n="retro.visitor">You are visitor No.</span> <span class="counter" id="counter"></span><br>
+        <span data-i18n="retro.visitor">You are visitor No.</span> <span class="counter" id="counter">------</span><br>
         <span data-i18n="retro.footer">Best viewed with Navigator 4.0 at 800x600 · Last updated 11/22/2040</span><br>
         <div class="badges" lang="en" aria-hidden="true">
           <span class="badge" style="background:#ffff00" data-i18n-html="retro.100_human_br_made">100% HUMAN<br>MADE</span>
@@ -348,9 +349,6 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
     svg.innerHTML=o;
   });
 
-  var n=38;
-  try{n=(parseInt(localStorage.getItem('neverland-visits')||'37',10)||37)+1;localStorage.setItem('neverland-visits',String(n));}catch(e){}
-  document.getElementById('counter').innerHTML=String(n).padStart(6,'0').split('').map(function(d){return '<b>'+d+'</b>';}).join('');
 
   function clock(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
   clock();setInterval(clock,30000);
@@ -368,7 +366,6 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
 (function(){
   var $=function(id){return document.getElementById(id)};
   i18n.apply(document);
-  $('wbody').textContent = t('forum.wBody', {n: '0047'});
   setTimeout(function(){$('welcome').classList.add('gone');}, 9000);
   $('welcome').onclick=function(){this.classList.add('gone');};
   $('sections').textContent = (t('forum.section') + ' ').repeat(60);
@@ -378,7 +375,7 @@ html:lang(zh-CN) .welcome button{font-family:Inter,PortalSans,"PingFang SC",sans
   $('terms').onscroll=function(){var t=$('terms');if(t.scrollTop+t.clientHeight>=t.scrollHeight-4)$('agree').disabled=false;};
   $('agree').onchange=function(){$('ok').disabled=!this.checked;};
   $('ok').onclick=function(){
-    var d=document.createElement('div');d.className='post';d.innerHTML=t('forum.replyAuthor');d.appendChild(document.createTextNode($('txt').value));
+    var d=document.createElement('div');d.className='post';d.innerHTML=t('forum.replyAuthor', {n: document.getElementById('counter').textContent});d.appendChild(document.createTextNode($('txt').value));
     $('replies').appendChild(d);$('txt').value='';$('rc').textContent='1';$('dlg').classList.remove('on');$('agree').checked=false;$('agree').disabled=true;$('ok').disabled=true;
   };
 })();
