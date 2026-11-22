@@ -184,7 +184,6 @@ html:lang(zh-CN) .gate .local{font:400 24px/1.1 PortalPixel,"PingFang SC",sans-s
   </div>
   <button type="button" class="retry" id="retry" hidden data-i18n="face.retry">Try again</button>
   <div class="btns">
-    <button type="button" id="a11y" data-i18n="face.accessibilityOptions">Accessibility options</button>
     <button type="button" id="over" data-i18n="face.restart">Start over</button>
   </div>
 </div>
@@ -225,20 +224,29 @@ function say(step,line,sub,bad,big){
 
 // ---- models ----
 let face=null,obj=null,lastFr=null,objs=[];
-const modelLoaded=(async()=>{try{
-  const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-  face=await FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",delegate:"GPU"},runningMode:"VIDEO",numFaces:1,outputFaceBlendshapes:true});
-  }catch(e){$('err').textContent=t('face.modelError');}})();
+// GPU first; some phones can't create the GPU delegate, so fall back to CPU.
+let modelTask=null;
+function loadModel(){
+  if(face)return Promise.resolve(face);
+  if(modelTask)return modelTask;
+  modelTask=(async()=>{
+    const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+    const make=delegate=>FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",delegate},runningMode:"VIDEO",numFaces:1,outputFaceBlendshapes:true});
+    try{face=await make("GPU");}catch{face=await make("CPU");}
+    return face;
+  })().catch(e=>{modelTask=null;throw e;});
+  return modelTask;
+}
+loadModel().catch(()=>{});
 
 async function confirmCamera(){
   const button=$('ok');
   if(button.disabled)return;
   button.disabled=true;
-  await modelLoaded;
-  if(!face)return;
   $('err').textContent='';
+  // Open the camera straight from the tap, before waiting on the model.
   try {
-    v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});
+    if(!v.srcObject)v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});
     await v.play();
   } catch {
     v.srcObject?.getTracks().forEach(track=>track.stop());
@@ -246,6 +254,16 @@ async function confirmCamera(){
     $('err').textContent=t('face.cameraBlocked');
     button.disabled=false;
     return;
+  }
+  if(!face){
+    button.textContent=t('face.loading');
+    try{await loadModel();}
+    catch{
+      $('err').textContent=t('face.modelError');
+      button.textContent=t('face.ok');
+      button.disabled=false;
+      return;
+    }
   }
   const gate=$('gate');
   gate.classList.add('out');
@@ -386,8 +404,6 @@ const STEPS={
 };
 
 $('over').onclick=()=>{if(S){showCount('');const r=$('retry');r.hidden=true;r.classList.remove('in');$('veil').classList.remove('on');go('lock');}};
-$('a11y').onclick=()=>{const keep=[$('sn').textContent,$('line').textContent,$('sub').textContent,$('msg').classList.contains('bad')];
-  say(t('face.accessibility'),t('face.optionsAvailable'),t('face.verifiedOnly'),true);setTimeout(()=>say(...keep),3200);};
 
 function loop(now){
   requestAnimationFrame(loop);if(v.readyState<2)return;
