@@ -34,6 +34,8 @@ python3 deploy/visitors.py --preview --port 8000 --db "${TMPDIR:-/tmp}/neverland
 
 然后打开 http://127.0.0.1:8000 。
 
+共用设备可以打开 `/new`。每次进入都会从 Neverland 首页开始独立的一轮，默认英文，可用 `/new?lang=zh` 指定中文。刷新、切语言、跨子域和重复提交都沿用本轮身份。下一位重新打开 `/new` 即可。
+
 访客完成 Stage 3 声音验证后获得全站编号。生产环境由 nginx 保护通行证和论坛，转发取号请求给 `neverland-visitors.service`。服务脚本安装在 `/opt/neverland-visitors/visitors.py`，数据库保存在 `/var/lib/neverland-visitors/visitors.sqlite3`，独立于静态站点发布目录。
 
 领证页会请访客留一个昵称（可以选「不留名」），`POST /api/visitor/name` 存进同一张表的 `name` 列；结语最后从 `GET /api/visitor/names` 读出所有留了名的访客，按编号列出。`publish.sh` 只发静态文件，改了 `visitors.py` 之后要手动把它复制到 `/opt/neverland-visitors/` 并重启 `neverland-visitors.service`，服务启动时会自动给旧数据库补上 `name` 列。

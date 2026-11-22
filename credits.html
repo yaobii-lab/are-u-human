@@ -227,7 +227,7 @@ roll.addEventListener('wheel', event => {
 // Every signed pass ends the credits: number and nickname, oldest first.
 async function listVisitors(){
   const [{visitors}, me] = await Promise.all(['/api/visitor/names', '/api/visitor'].map(url =>
-    fetch(url, {cache:'no-store'}).then(response => { if(!response.ok) throw new Error(url); return response.json(); })));
+    fetch(i18n.visit + url, {cache:'no-store'}).then(response => { if(!response.ok) throw new Error(url); return response.json(); })));
   if(!visitors.length) return;
   document.getElementById('visitors').replaceChildren(...visitors.map(({number, name}) => {
     const row = document.createElement('li');

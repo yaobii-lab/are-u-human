@@ -1,12 +1,13 @@
 // The catalog is a regular script so page scripts can translate their first render synchronously.
 (() => {
   const storageKey = 'neverland-language';
+  const visit = location.pathname.match(/^\/visit\/[0-9a-f]{32}(?=\/)/)?.[0] || '';
   const requested = new URL(location.href).searchParams.get('lang');
   const supported = value => value === 'en' || value === 'zh';
   let lang = supported(requested) ? requested : 'en';
   try {
-    if (supported(requested)) localStorage.setItem(storageKey, lang);
-    else {
+    if (!visit && supported(requested)) localStorage.setItem(storageKey, lang);
+    else if (!visit) {
       const saved = localStorage.getItem(storageKey);
       if (supported(saved)) lang = saved;
     }
@@ -19,6 +20,7 @@
   }
   function url(path, language = lang) {
     const target = new URL(path, location.href);
+    if (visit && !target.pathname.startsWith(visit + '/')) target.pathname = visit + target.pathname;
     target.searchParams.set('lang', language);
     return target.href;
   }
@@ -44,5 +46,5 @@
     });
   }
   window.t = t;
-  window.i18n = {lang, url, apply};
+  window.i18n = {lang, url, apply, visit};
 })();

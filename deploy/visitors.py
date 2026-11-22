@@ -7,6 +7,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import re
+import secrets
 import sqlite3
 import time
 import unicodedata
@@ -15,6 +16,8 @@ from urllib.parse import urlsplit
 API = "/api/visitor"
 COOKIE = "neverland-pass"
 TOKEN = re.compile(r"[0-9a-f]{32}")
+RUN_PATH = re.compile(r"^(/visit/[0-9a-f]{32})/")
+RUN_COOKIE = "neverland-visit"
 NAME_LIMIT = 24
 # Names roll publicly at the end of the epilogue. Fragments are matched anywhere after
 # folding case, width, spacing, punctuation and common digit swaps; WORDS only as whole words,
@@ -108,20 +111,43 @@ class Handler(SimpleHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(body)
 
+    def request_path(self):
+        # nginx strips the visit prefix before proxying, and supplies it in a trusted header.
+        if self.server.preview:
+            match = RUN_PATH.match(self.path)
+            self.run = match.group(1) if match else ""
+            self.path = self.path[len(self.run):]
+        else:
+            self.run = self.headers.get("X-Neverland-Visit", "")
+        return urlsplit(self.path).path
+
+    def new_visit(self):
+        prefix = "/visit/" + secrets.token_hex(16)
+        attrs = "" if self.server.preview else "; Domain=ariari.art; Secure"
+        query = urlsplit(self.path).query
+        self.send_response(302)
+        self.send_header("Location", prefix + "/" + ("?" + query if query else ""))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Set-Cookie", f"{RUN_COOKIE}={secrets.token_hex(16)}; Path={prefix}/; HttpOnly; SameSite=Lax{attrs}")
+        self.end_headers()
+
     def cookie(self):
         jar = SimpleCookie()
         try:
             jar.load(self.headers.get("Cookie", ""))
         except CookieError:
             return None
-        value = jar[COOKIE].value if COOKIE in jar else ""
+        name = RUN_COOKIE if self.run else COOKIE
+        value = jar[name].value if name in jar else ""
         return value if TOKEN.fullmatch(value) else None
 
     def do_GET(self):
-        path = urlsplit(self.path).path
+        path = self.request_path()
+        if path in ("/new", "/new/"):
+            return self.new_visit()
         if self.server.preview and path == "/jury.html":
             self.send_response(302)
-            self.send_header("Location", "/stage3.html" + ("?" + urlsplit(self.path).query if urlsplit(self.path).query else ""))
+            self.send_header("Location", self.run + "/stage3.html" + ("?" + urlsplit(self.path).query if urlsplit(self.path).query else ""))
             self.end_headers()
             return
         if path in (API, API + "/check", API + "/names") or self.server.preview and path in ("/pass.html", "/forum.html"):
@@ -137,7 +163,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.reply(204 if status["verified"] else 401)
             if not status["verified"]:
                 self.send_response(302)
-                self.send_header("Location", "/start.html" + ("?" + urlsplit(self.path).query if urlsplit(self.path).query else ""))
+                self.send_header("Location", self.run + "/start.html" + ("?" + urlsplit(self.path).query if urlsplit(self.path).query else ""))
                 self.send_header("Cache-Control", "no-store")
                 self.end_headers()
                 return
@@ -148,7 +174,7 @@ class Handler(SimpleHTTPRequestHandler):
     do_HEAD = do_GET
 
     def do_POST(self):
-        path = urlsplit(self.path).path
+        path = self.request_path()
         if path not in (API + "/complete", API + "/name"):
             return self.reply(404)
         origin = self.headers.get("Origin", "")
@@ -162,7 +188,10 @@ class Handler(SimpleHTTPRequestHandler):
             data = json.loads(self.rfile.read(length))
             if not isinstance(data, dict):
                 raise ValueError
-            secret = self.cookie() or data.get("browser")
+            secret = self.cookie()
+            if self.run and not secret:
+                return self.reply(401)
+            secret = secret or data.get("browser")
             if not isinstance(secret, str) or not TOKEN.fullmatch(secret):
                 raise ValueError
             with closing(sqlite3.connect(self.server.db, timeout=10)) as db, db:
@@ -175,7 +204,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.reply(422)
         except sqlite3.Error:
             return self.reply(503)
-        self.reply(200, result, secret if result.get("number") else None)
+        self.reply(200, result, secret if not self.run and result.get("number") else None)
 
 
 if __name__ == "__main__":

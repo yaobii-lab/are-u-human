@@ -27,9 +27,9 @@ async function visitorRequest(action, payload) {
   if (action) {
     options.method = 'POST';
     options.headers = {'Content-Type': 'application/json'};
-    options.body = JSON.stringify({...payload, browser: await visitorBrowserKey()});
+    options.body = JSON.stringify(i18n.visit ? payload : {...payload, browser: await visitorBrowserKey()});
   }
-  const response = await fetch('/api/visitor' + (action ? '/' + action : ''), options);
+  const response = await fetch(i18n.visit + '/api/visitor' + (action ? '/' + action : ''), options);
   if (!response.ok) throw Object.assign(new Error('Visitor service unavailable'), {status: response.status});
   return response.json();
 }
