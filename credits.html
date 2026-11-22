@@ -9,6 +9,7 @@
 <link rel="preload" href="assets/fonts/epilogue-hand.ttf" as="font" type="font/ttf" crossorigin>
 <style>
 @font-face{font-family:EpilogueHand;src:url(assets/fonts/epilogue-hand.ttf) format("truetype");font-display:swap}
+@font-face{font-family:PassHandHan;src:url(assets/fonts/lingguang-cjk.woff2) format("woff2");unicode-range:U+2E80-2FFF,U+3000-303F,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;font-display:swap}
 *{box-sizing:border-box}
 html{background:#000;color-scheme:dark}
 body{--side:clamp(32px,7vw,88px);--foot:clamp(24px,5svh,52px);--paper:#eeeae3;--serif:Georgia,'Songti SC','Noto Serif CJK SC',SimSun,serif;--sans:Inter,system-ui,sans-serif;margin:0;background:#000;color:var(--paper);font-family:var(--serif)}
@@ -37,7 +38,7 @@ html:lang(zh) .thanks{max-width:23em}
 .visitors .no{text-align:right}
 .visitors .who{text-align:left}
 .visitors .no{font:400 12px/1 var(--sans);letter-spacing:.08em;color:#8f8b85;font-variant-numeric:tabular-nums}
-.visitors .who{font:400 clamp(24px,2.6vw,32px)/1.3 EpilogueHand,'Kaiti SC',STKaiti,KaiTi,cursive;overflow-wrap:anywhere}
+.visitors .who{font:400 clamp(24px,2.6vw,32px)/1.3 EpilogueHand,PassHandHan,cursive;overflow-wrap:anywhere}
 .visitors .mine .who{color:#fff}
 .visitors .mine .no{color:#d5d1ca}
 .visitors .you{margin-left:.6em;font:400 12px/1 var(--sans);color:#d5d1ca}
@@ -77,7 +78,6 @@ body.rolling footer{background:transparent}
     <p data-i18n="credits.world"></p>
     <p data-i18n="credits.experiment"></p>
     <p data-i18n="credits.friction"></p>
-    <p class="refrain" lang="en"><span>The Test Can't Tell.</span> <span>But You Still Have to Pass.</span></p>
     <p data-i18n="credits.last"></p>
     <blockquote data-i18n="credits.line"></blockquote>
   </div>

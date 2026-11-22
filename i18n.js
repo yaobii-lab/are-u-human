@@ -30,7 +30,7 @@
     root.querySelectorAll('[data-i18n-html]').forEach(el => {
       el.innerHTML = t(el.dataset.i18nHtml);
     });
-    for (const attr of ['aria-label', 'placeholder', 'alt']) {
+    for (const attr of ['aria-label', 'placeholder', 'alt', 'title']) {
       root.querySelectorAll('[data-i18n-' + attr + ']').forEach(el => {
         el.setAttribute(attr, t(el.getAttribute('data-i18n-' + attr)));
       });

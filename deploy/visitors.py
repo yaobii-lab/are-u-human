@@ -9,12 +9,33 @@ from pathlib import Path
 import re
 import sqlite3
 import time
+import unicodedata
 from urllib.parse import urlsplit
 
 API = "/api/visitor"
 COOKIE = "neverland-pass"
 TOKEN = re.compile(r"[0-9a-f]{32}")
 NAME_LIMIT = 24
+# Names roll publicly at the end of the epilogue. Fragments are matched anywhere after
+# folding case, width, spacing, punctuation and common digit swaps; WORDS only as whole words,
+# so "class" or "Dickens" still pass.
+FRAGMENTS = (
+    "fuck", "fuk", "shit", "cunt", "bitch", "whore", "slut", "nigger", "nigga", "faggot", "retard",
+    "motherf", "pussy", "asshole", "bastard", "wanker", "dildo", "porn", "penis", "vagina", "hitler", "nazi",
+    "傻逼", "傻b", "煞笔", "沙比", "傻屄", "装逼", "牛逼", "屌", "肏", "操你", "草你", "艹你", "日你", "干你",
+    "你妈", "他妈", "她妈", "尼玛", "妈的", "妈逼", "狗日", "鸡巴", "几把", "婊子", "贱人", "贱货", "骚货",
+    "妓女", "强奸", "杂种", "畜生", "去死", "滚蛋", "废物", "脑残", "智障", "白痴", "弱智", "王八蛋", "龟儿子",
+    "shabi", "caonima", "nmsl", "wcnm", "mdzz", "cnm", "tmd", "nmb",
+)
+WORDS = {"ass", "dick", "cock", "fag", "tits", "piss", "rape", "sex", "anal", "cum", "sb", "jb", "nm"}
+LEET = str.maketrans("013457@$!", "oieastasi")
+
+
+def is_profane(name):
+    text = unicodedata.normalize("NFKC", name).casefold().translate(LEET)
+    words = re.findall(r"[a-z]+", text)
+    squeezed = "".join(ch for ch in text if ch.isalnum())
+    return any(fragment in squeezed for fragment in FRAGMENTS) or any(word in WORDS for word in words)
 
 
 def identity(secret):
@@ -35,6 +56,8 @@ def clean_name(value):
     name = " ".join("".join(ch for ch in value if ch.isprintable()).split())
     if len(name) > NAME_LIMIT:
         raise ValueError
+    if name and is_profane(name):
+        raise LookupError
     return name or None
 
 
@@ -148,6 +171,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.reply(400)
         except PermissionError:
             return self.reply(401)
+        except LookupError:
+            return self.reply(422)
         except sqlite3.Error:
             return self.reply(503)
         self.reply(200, result, secret if result.get("number") else None)

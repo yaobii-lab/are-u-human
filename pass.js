@@ -79,7 +79,7 @@
     ctx.stroke();
     ctx.restore();
     if (signature) {
-      const family = "px PassHand, 'Kaiti SC', STKaiti, KaiTi, cursive";
+      const family = 'px PassHand, PassHandHan, cursive';
       let size = 27;
       ctx.font = size + family;
       while (size > 13 && ctx.measureText(signature).width > 194) ctx.font = --size + family;
@@ -165,6 +165,9 @@
     el('sign').disabled = !signature;
     el('nameError').hidden = true;
     drawCard();
+    // Han characters outside the PassHand subset come from a lazily loaded face; redraw once it lands.
+    const typed = signature;
+    if (typed) document.fonts.load('27px PassHand, PassHandHan', typed).then(() => { if (signature === typed) drawCard(); }, () => {});
   }
   async function keepName(name) {
     const form = el('naming');
@@ -176,8 +179,11 @@
       drawCard();
       scene.dataset.step = 'stamp';
       seals[0].button.focus({preventScroll:true});
-    } catch {
+    } catch (error) {
+      const rejected = error.status === 422;
+      el('nameError').textContent = t(rejected ? 'pass.nameRejected' : 'pass.nameError');
       el('nameError').hidden = false;
+      if (rejected) nameInput.select();
     } finally {
       form.inert = false;
     }
@@ -238,8 +244,7 @@
     if (!visitor.number) { location.replace(i18n.url('start.html')); return; }
     passNumber = visitorDigits(visitor.number);
     nameInput.value = visitor.name || '';
-    signature = nameInput.value;
-    el('sign').disabled = !signature;
+    writeName();
     scene.dataset.step = 'name';
     buildPalette();
     drawCard();

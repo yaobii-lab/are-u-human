@@ -30,7 +30,7 @@ async function visitorRequest(action, payload) {
     options.body = JSON.stringify({...payload, browser: await visitorBrowserKey()});
   }
   const response = await fetch('/api/visitor' + (action ? '/' + action : ''), options);
-  if (!response.ok) throw new Error('Visitor service unavailable');
+  if (!response.ok) throw Object.assign(new Error('Visitor service unavailable'), {status: response.status});
   return response.json();
 }
 function visitorDigits(number) {
