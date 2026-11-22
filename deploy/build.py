@@ -48,6 +48,5 @@ for host, pages in groups.items():
             (root / soundtrack.parent).mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source / soundtrack, root / soundtrack)
         page = (source / name).read_text().replace("</head>", tracker + "\n</head>", 1)
-        page = page.replace('href="start.html"', 'href="https://portal.ariari.art/"')
         page = page.replace('data-background-page="index.html"', 'data-background-page="https://ariari.art/"')
         (root / ("index.html" if name == "start.html" else name)).write_text(page)
