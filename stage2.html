@@ -71,6 +71,7 @@ body{background:var(--bg);font-family:var(--font-body);color:var(--text);-webkit
 .ph{position:absolute;inset:0;display:flex;align-items:flex-end;padding:8px}
 .ph span{font-size:11px;line-height:1.3;color:rgba(0,0,0,.72);background:rgba(255,255,255,.78);padding:3px 5px;border-radius:2px}
 .n3 .ph span{font-size:10px}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 
 /* ---- the shared "captcha" treatment, applied to every image ---- */
 .fx .tile::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
@@ -241,8 +242,8 @@ const ART={
   cylinder:S(`<path d="M20 50v14c0 6 13 10 30 10s30-4 30-10V50" fill="#3d4245"/><ellipse cx="50" cy="50" rx="30" ry="10" fill="#9aa1a4"/>`,'#f2f4f5'),
   blueGray:S('', '#a9b8c4'),orange:S('', '#e8935a'),dimYellow:S('', '#c7b05a'),inkGreen:S('', '#2f4a3c'),
 };
-/* B: real photos, placeholder color fields until the images arrive */
-const P=(label,bg)=>`<div class="ph" style="background:${bg}"><span>${label}</span></div>`;
+/* B: real photos (assets/stage2, sources in SOURCES.md); the color field shows while the image loads */
+const P=(file,bg)=>`<div class="ph" style="background:${bg}"><img src="assets/stage2/${file}.jpg" alt="" decoding="async"></div>`;
 
 /* pct = made-up share of humans per option, for the "quantified report" */
 const BANK=[
@@ -252,11 +253,11 @@ const BANK=[
   {id:'A4',opts:[['saw',ART.waveSaw,6],['slow',ART.waveSlow,84],['dense',ART.waveDense,10]]},
   {id:'A5',opts:[['tetra',ART.tetra,73],['sphere',ART.sphere,15],['cyl',ART.cylinder,12]]},
   {id:'A6',opts:[['bg',ART.blueGray,41],['or',ART.orange,14],['yl',ART.dimYellow,28],['gr',ART.inkGreen,17]]},
-  {id:'B7',photo:1,opts:[['velvet',P(t('tile.velvet'),'linear-gradient(135deg,#5a2a3c,#8a4a5e)'),11],['sand',P(t('tile.sand'),'linear-gradient(135deg,#b9a688,#8c7a5e)'),63],['metal',P(t('tile.metal'),'linear-gradient(90deg,#9ea4a8,#d8dcde,#8d9397)'),26]]},
-  {id:'B8',photo:1,opts:[['warm',P(t('tile.warm'),'linear-gradient(160deg,#f2c47c,#b8794a)'),8],['fluor',P(t('tile.fluor'),'linear-gradient(180deg,#eef3f1,#c9d4d0)'),38],['grey',P(t('tile.grey'),'linear-gradient(160deg,#9fb0bf,#5e6f7d)'),54]]},
-  {id:'B9',photo:1,opts:[['frame',P(t('tile.frame'),'linear-gradient(135deg,#ece6dc,#c9bfae)'),47],['paste',P(t('tile.paste'),'linear-gradient(135deg,#f4f4f2,#cfd6dc)'),39],['box',P(t('tile.box'),'linear-gradient(135deg,#c9a06c,#94703f)'),14]]},
-  {id:'B10',photo:1,opts:[['storm',P(t('tile.storm'),'linear-gradient(180deg,#5f6670,#9aa0a8)'),84],['thin',P(t('tile.thin'),'linear-gradient(180deg,#8fb7dc,#d6e6f2)'),5],['pink',P(t('tile.pink'),'linear-gradient(180deg,#e9a7b4,#f6d3b8)'),11]]},
-  {id:'B11',photo:1,opts:[['c1',P(t('tile.c1'),'linear-gradient(135deg,#3a3d42,#6b6f75)'),58],['c2',P(t('tile.c2'),'linear-gradient(135deg,#d8d2c6,#a59c8c)'),31],['c3',P(t('tile.c3'),'radial-gradient(circle at 50% 40%,#f3ead6,#b7ab92)'),11]]},
+  {id:'B7',photo:1,opts:[['velvet',P('B7-velvet-1','linear-gradient(135deg,#5a2a3c,#8a4a5e)'),11],['sand',P('B7-sand-2','linear-gradient(135deg,#b9a688,#8c7a5e)'),63],['metal',P('B7-metal-2','linear-gradient(90deg,#9ea4a8,#d8dcde,#8d9397)'),26]]},
+  {id:'B8',photo:1,opts:[['warm',P('B8-warm-1','linear-gradient(160deg,#f2c47c,#b8794a)'),8],['fluor',P('B8-fluor-1','linear-gradient(180deg,#eef3f1,#c9d4d0)'),38],['grey',P('B8-grey-1','linear-gradient(160deg,#9fb0bf,#5e6f7d)'),54]]},
+  {id:'B9',photo:1,opts:[['frame',P('B9-frame-1','linear-gradient(135deg,#ece6dc,#c9bfae)'),47],['paste',P('B9-paste-4','linear-gradient(135deg,#f4f4f2,#cfd6dc)'),39],['box',P('B9-box-4','linear-gradient(135deg,#c9a06c,#94703f)'),14]]},
+  {id:'B10',photo:1,opts:[['storm',P('B10-storm-1','linear-gradient(180deg,#5f6670,#9aa0a8)'),84],['thin',P('B10-thin-1','linear-gradient(180deg,#8fb7dc,#d6e6f2)'),5],['pink',P('B10-pink-1','linear-gradient(180deg,#e9a7b4,#f6d3b8)'),11]]},
+  {id:'B11',photo:1,opts:[['c1',P('B11-c1-3','linear-gradient(135deg,#3a3d42,#6b6f75)'),58],['c2',P('B11-c2-3','linear-gradient(135deg,#d8d2c6,#a59c8c)'),31],['c3',P('B11-c3-2','radial-gradient(circle at 50% 40%,#f3ead6,#b7ab92)'),11]]},
 ].map(question => {
   const prefix = 'quiz.' + question.id;
   const kw = t(prefix + '.keyword');
