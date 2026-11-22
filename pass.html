@@ -34,6 +34,28 @@
       </button>
     </div>
     <div id="tools" inert aria-hidden="true">
+      <form id="naming" autocomplete="off" novalidate>
+        <label class="name-field">
+          <span class="visually-hidden" data-i18n="pass.nameLabel"></span>
+          <input id="name" name="nickname" maxlength="24" spellcheck="false" autocapitalize="off" enterkeyhint="done" data-i18n-placeholder="pass.namePlaceholder" aria-describedby="nameNote">
+          <svg aria-hidden="true" viewBox="0 0 300 12" preserveAspectRatio="none"><path d="M3 7.5Q42 4.6 88 6.4T171 6.1Q229 4.4 297 7.8"/></svg>
+        </label>
+        <p id="nameNote" data-i18n="pass.nameNote"></p>
+        <div class="name-actions">
+          <button id="anonymous" type="button" data-i18n="pass.anonymous"></button>
+          <button id="sign" class="ink-action" type="submit" data-i18n-aria-label="pass.sign">
+            <svg aria-hidden="true" viewBox="0 0 46 46">
+              <g stroke="#b9d38a" stroke-width="7" stroke-opacity=".9" transform="rotate(-7 23 23)" filter="url(#crayon)">
+                <path d="M15.6 8.1Q22 6.2 28.8 7.4 M9.8 13.4Q22 10.6 35.2 12.6 M6.4 18.9Q22 16.1 38.4 18.2"/>
+                <path d="M5.6 24.5Q22 21.4 39.5 23.9 M7.7 29.8Q23 27.1 38.1 29.2 M11.2 35.1Q24 32.5 35.2 34"/>
+                <path d="M16.6 39.6Q24 37.8 29.6 38.6"/>
+              </g>
+              <path d="M11.4 23.8q4.2 3.3 7.6 8.6 5.6-10.6 15.9-19.1"/>
+            </svg>
+          </button>
+        </div>
+        <p id="nameError" class="name-error" role="alert" hidden data-i18n="pass.nameError"></p>
+      </form>
       <div class="stamp-tools">
         <div class="stamp-row" id="palette" role="group" data-i18n-aria-label="pass.choose"></div>
         <button id="undo" class="ink-action" type="button" hidden data-i18n-aria-label="pass.undo">

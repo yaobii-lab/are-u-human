@@ -31,6 +31,16 @@ html:lang(en) blockquote{font-style:italic}
 .production ul{list-style:none;margin:0;padding:0;font-size:clamp(25px,3.1vw,42px);line-height:1.27;letter-spacing:-.025em}
 .thanks{margin:28px auto 0;max-width:37ch;font-size:16px;line-height:1.65;color:#c5c1ba;text-wrap:balance}
 html:lang(zh) .thanks{max-width:23em}
+.visitors{margin-top:clamp(72px,11vh,120px)}
+.visitors ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.visitors li{display:grid;grid-template-columns:1fr 1fr;align-items:baseline;column-gap:1.1em;color:#d5d1ca}
+.visitors .no{text-align:right}
+.visitors .who{text-align:left}
+.visitors .no{font:400 12px/1 var(--sans);letter-spacing:.08em;color:#8f8b85;font-variant-numeric:tabular-nums}
+.visitors .who{font:400 clamp(24px,2.6vw,32px)/1.3 EpilogueHand,'Kaiti SC',STKaiti,KaiTi,cursive;overflow-wrap:anywhere}
+.visitors .mine .who{color:#fff}
+.visitors .mine .no{color:#d5d1ca}
+.visitors .you{margin-left:.6em;font:400 12px/1 var(--sans);color:#d5d1ca}
 body.rolling{padding-bottom:var(--production-height)}
 body.rolling .production{position:fixed;inset:0;margin:auto;height:fit-content;padding:0 var(--side);pointer-events:none}
 
@@ -81,6 +91,10 @@ body.rolling footer{background:transparent}
       <li>Yutong Lin</li>
     </ul>
     <p class="thanks" data-i18n="credits.thanks"></p>
+    <div class="visitors" hidden>
+      <h2 lang="en" data-i18n="credits.visitors"></h2>
+      <ol id="visitors"></ol>
+    </div>
   </section>
 <button id="roll" type="button" hidden><span></span></button>
 <audio preload="auto" src="assets/audio/credits.mp3"></audio>
@@ -113,7 +127,7 @@ const production = document.querySelector('.production');
 const roll = document.getElementById('roll');
 const hint = roll.querySelector('span');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const rollDuration = 18000;
+let rollDuration = 18000;
 let timeline = null;
 let position = 0;
 let speed = 0;
@@ -145,6 +159,10 @@ function startRoll(){
   stopReadingScroll();
   document.body.style.setProperty('--production-height', production.offsetHeight + 'px');
   document.body.classList.add('rolling');
+  // A long visitor list keeps rolling until its last name has crossed the screen.
+  const overflow = Math.max(0, production.offsetHeight - innerHeight * .72);
+  production.style.marginTop = overflow ? '0' : '';
+  rollDuration = 18000 + overflow / .055;
   const timing = {duration:rollDuration, fill:'both'};
   timeline = [
     epilogue.animate([{opacity:1}, {opacity:0,offset:1600/rollDuration}, {opacity:0}],timing),
@@ -152,7 +170,7 @@ function startRoll(){
       {opacity:0,transform:'translateY(20svh)'},
       {opacity:0,transform:'translateY(20svh)',offset:1900/rollDuration},
       {opacity:1,transform:'translateY(16svh)',offset:4300/rollDuration},
-      {opacity:1,transform:'translateY(0)'}
+      {opacity:1,transform:`translateY(${-overflow}px)`}
     ],timing)
   ];
   timeline.forEach(animation => animation.pause());
@@ -206,6 +224,32 @@ roll.addEventListener('wheel', event => {
   position = Math.max(0, Math.min(rollDuration, position + pixels * rollDuration / innerHeight));
   paint();
 },{passive:false});
+// Every signed pass ends the credits: number and nickname, oldest first.
+async function listVisitors(){
+  const [{visitors}, me] = await Promise.all(['/api/visitor/names', '/api/visitor'].map(url =>
+    fetch(url, {cache:'no-store'}).then(response => { if(!response.ok) throw new Error(url); return response.json(); })));
+  if(!visitors.length) return;
+  document.getElementById('visitors').replaceChildren(...visitors.map(({number, name}) => {
+    const row = document.createElement('li');
+    const no = document.createElement('span');
+    no.className = 'no';
+    no.textContent = 'No.' + String(number).padStart(6, '0');
+    const who = document.createElement('span');
+    who.className = 'who';
+    who.textContent = name;
+    row.append(no, who);
+    if(number === me.number){
+      row.className = 'mine';
+      const you = document.createElement('span');
+      you.className = 'you';
+      you.textContent = t('credits.you');
+      who.append(you);
+    }
+    return row;
+  }));
+  production.querySelector('.visitors').hidden = false;
+}
+listVisitors().catch(() => {});
 // Let readers finish the note on short screens before the soundtrack starts the roll.
 const rehearsal = new URLSearchParams(location.search).get('preview') === 'transition';
 // Keep a fractional position so the reading speed is independent of the display refresh rate.

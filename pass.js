@@ -16,14 +16,14 @@
   ];
   const impressions = [];
   let selected = null;
-  let passNumber;
+  let passNumber, signature = '';
 
   function mark(ctx, tile, x, y, size) {
     const unit = marks.naturalHeight;
     ctx.drawImage(marks, tile * unit, 0, unit, unit, x, y, size, size);
   }
-  function lettering(ctx, words, size, x, y) {
-    ctx.font = size + 'px PassHand, cursive';
+  function lettering(ctx, words, size, x, y, family = 'px PassHand, cursive') {
+    ctx.font = size + family;
     ctx.save();
     ctx.strokeStyle = ctx.fillStyle;
     ctx.lineWidth = size < 20 ? .32 : .24;
@@ -72,6 +72,19 @@
     lettering(ctx, 'No.' + passNumber, 32, 296, 144);
     lettering(ctx, 'verified human', 19, 298, 170);
     lettering(ctx, 'Neverland', 19, 298, 193);
+    ctx.save();
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(298, 239); ctx.quadraticCurveTo(352, 236, 410, 238.4); ctx.quadraticCurveTo(456, 240, 494, 236.6);
+    ctx.stroke();
+    ctx.restore();
+    if (signature) {
+      const family = "px PassHand, 'Kaiti SC', STKaiti, KaiTi, cursive";
+      let size = 27;
+      ctx.font = size + family;
+      while (size > 13 && ctx.measureText(signature).width > 194) ctx.font = --size + family;
+      lettering(ctx, signature, size, 300, 232, family);
+    }
     ctx.beginPath();
     ctx.setLineDash([4, 5]);
     ctx.moveTo(23, 266); ctx.lineTo(497, 265); ctx.stroke(); ctx.setLineDash([]);
@@ -131,7 +144,9 @@
       el('tools').inert = false;
       el('tools').removeAttribute('aria-hidden');
       paper.setAttribute('aria-label', t('pass.label'));
-      if (!e.detail) seals[0].button.focus();
+      if (scene.dataset.step === 'name') {
+        if (!e.detail || matchMedia('(pointer:fine)').matches) el('name').focus({preventScroll:true});
+      } else if (!e.detail) seals[0].button.focus();
       return;
     }
     if (scene.dataset.state !== 'open' || !selected) return;
@@ -143,6 +158,41 @@
     drawCard();
     el('undo').hidden = false;
   });
+  // The nickname is written on the card as it is typed, then kept for the epilogue's visitor list.
+  const nameInput = el('name');
+  function writeName() {
+    signature = nameInput.value.replace(/\s+/g, ' ').trim();
+    el('sign').disabled = !signature;
+    el('nameError').hidden = true;
+    drawCard();
+  }
+  async function keepName(name) {
+    const form = el('naming');
+    if (form.inert) return;
+    form.inert = true;
+    try {
+      await visitorRequest('name', {name});
+      signature = name;
+      drawCard();
+      scene.dataset.step = 'stamp';
+      seals[0].button.focus({preventScroll:true});
+    } catch {
+      el('nameError').hidden = false;
+    } finally {
+      form.inert = false;
+    }
+  }
+  nameInput.addEventListener('input', writeName);
+  el('naming').addEventListener('submit', e => {
+    e.preventDefault();
+    if (signature) keepName(signature);
+  });
+  el('anonymous').onclick = () => {
+    nameInput.value = '';
+    writeName();
+    keepName('');
+  };
+
   el('undo').onclick = () => {
     impressions.pop();
     drawCard();
@@ -187,6 +237,10 @@
   Promise.all([visitorRequest(), marks.decode(), document.fonts.load('24px PassHand').catch(() => {})]).then(([visitor]) => {
     if (!visitor.number) { location.replace(i18n.url('start.html')); return; }
     passNumber = visitorDigits(visitor.number);
+    nameInput.value = visitor.name || '';
+    signature = nameInput.value;
+    el('sign').disabled = !signature;
+    scene.dataset.step = 'name';
     buildPalette();
     drawCard();
     measureLanding();

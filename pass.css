@@ -46,6 +46,23 @@ button[hidden]{display:none}
 #tools{visibility:hidden;opacity:0;padding-top:clamp(18px,3.7vh,36px)}
 [data-state=open] #tools{visibility:visible;opacity:1;animation:appear .35s .28s both}
 @keyframes appear{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#naming{width:min(100%,330px);margin:0 auto}
+[data-step=stamp] #naming,[data-step=name] :is(.stamp-tools,.actions){display:none}
+.name-field{position:relative;display:block}
+#name{display:block;width:100%;padding:2px 4px 6px;border:0;background:none;color:#292921;font:26px/1.2 PassHand,'Kaiti SC',STKaiti,KaiTi,cursive;text-align:center;caret-color:#55782d}
+#name::placeholder{color:#a9a89c}
+#name:focus{outline:0}
+.name-field svg{display:block;width:100%;height:12px;margin-top:-5px;fill:none;stroke:#292921;stroke-width:1.7;stroke-linecap:round;transition:stroke .2s}
+.name-field:focus-within svg{stroke:#55782d}
+#nameNote{margin:12px auto 0;max-width:26em;color:#77766b;font-size:13px;line-height:1.5;text-wrap:balance}
+.name-actions{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px}
+#anonymous{min-height:44px;padding:0 10px;color:#77766b;font-size:13px;text-decoration:underline;text-decoration-style:wavy;text-decoration-color:#c9c8bc;text-underline-offset:5px}
+@media(hover:hover){#anonymous:hover{color:#292921}}
+#sign svg{width:42px;height:42px}
+#sign:disabled{cursor:default;opacity:.35}
+.name-error{margin:6px 0 0;color:#b4533c;font-size:13px}
+[data-step=stamp] .stamp-tools{animation:appear .35s both}
 .stamp-tools{--gap:clamp(4px,calc(5vw - 12px),12px);display:flex;align-items:center;justify-content:center;gap:var(--gap)}
 .stamp-row{display:flex;min-width:0;gap:var(--gap)}
 .seal{width:clamp(44px,14vw,63px);min-width:0;position:relative;display:grid;place-items:center;transition:transform .16s}

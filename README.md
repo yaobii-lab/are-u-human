@@ -36,6 +36,8 @@ python3 deploy/visitors.py --preview --port 8000 --db "${TMPDIR:-/tmp}/neverland
 
 访客完成 Stage 3 声音验证后获得全站编号。生产环境由 nginx 保护通行证和论坛，转发取号请求给 `neverland-visitors.service`。服务脚本安装在 `/opt/neverland-visitors/visitors.py`，数据库保存在 `/var/lib/neverland-visitors/visitors.sqlite3`，独立于静态站点发布目录。
 
+领证页会请访客留一个昵称（可以选「不留名」），`POST /api/visitor/name` 存进同一张表的 `name` 列；结语最后从 `GET /api/visitor/names` 读出所有留了名的访客，按编号列出。`publish.sh` 只发静态文件，改了 `visitors.py` 之后要手动把它复制到 `/opt/neverland-visitors/` 并重启 `neverland-visitors.service`，服务启动时会自动给旧数据库补上 `name` 列。
+
 ## 维护期间与恢复开放
 
 两个域名共用 nginx 站点。维护配置 `deploy/neverland-maintenance.conf` 从独立目录 `/var/www/neverland/maintenance` 提供 `404.html` 和所需素材，访客页面和 API 都返回 HTTP 503。常规发布可以继续更新 `current`，重新开放时会使用它指向的版本。

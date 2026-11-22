@@ -10,8 +10,8 @@
 /* Stage 3 · Voice. The default light field and two review looks share one flow:
    call = Gate phones you, an automated voice line gives instructions;
    form = a printed voiceprint check form that gets a red stamp.
-   Round 1: read it in a described tone, always rejected (too flat = TTS, too much = acting).
-   Round 2: the tone becomes two locked numbers, and you get a percentage to correct. */
+   Round 1: perform the emotional shift in a short line.
+   Round 2: repeat it against Gate’s per-syllable targets. */
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
 body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
@@ -127,7 +127,7 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
 .chart{display:none}
 .v-orb .chart{display:block;width:min(360px,100%);margin:14px auto 0}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
-.readout{display:grid;grid-template-columns:4.2em repeat(5,1fr);align-items:center;row-gap:2px;margin-top:2px;
+.readout{display:grid;grid-template-columns:4.2em var(--chart-columns);align-items:center;row-gap:2px;margin-top:2px;
  font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--gray-700);font-variant-numeric:tabular-nums;text-align:center}
 .readout b{font:500 11px var(--font-body);text-align:left;white-space:nowrap}
 .readout .ch{font:600 16px var(--font-body);color:var(--brand-900);padding:2px 0 3px}
@@ -189,18 +189,17 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
 .v-orb .stage{display:flex;gap:5px}
 .v-orb .top .dots{--dot:var(--gray-200);--dot-on:var(--accent)}
 .v-orb .ask{position:absolute;top:18%;width:calc(100% - 32px);text-align:center;transition:top .7s var(--ease-out)}
-.v-orb [data-mood=idle][data-round="1"] .ask{top:36%}
+.v-orb [data-mood=idle][data-round="1"] .ask{position:relative;top:auto;width:100%;margin-top:clamp(65px,calc(30dvh - 44px),240px)}
+.v-orb .voice-title{margin:0 0 8px;font-size:19px;font-weight:600;color:var(--brand-900)}
 .v-orb .tone{font-size:15px;font-weight:400;color:var(--gray-700)}
 .v-orb .line{margin-top:8px;font-size:26px;font-weight:500;letter-spacing:-.02em;color:var(--ink)}
-.v-orb .chart{width:min(310px,100%);margin:18px auto 0}
+.v-orb .chart{width:100%;margin:16px auto 0;overflow-x:auto}
+.chart-content{min-width:var(--chart-width)}
 .v-orb .plot-window{display:grid;align-items:center;overflow:hidden;height:clamp(94px,18dvh,146px);transition:height .7s var(--ease-out)}
 .v-orb .plot-window svg{width:100%;height:100%;min-height:0}
-.v-orb [data-mood=idle][data-round="1"] .plot-window{height:12px}
-.v-orb [data-mood=idle][data-round="1"] #plot text{visibility:hidden}
-.v-orb .readout{grid-template-columns:12.12% repeat(5,1fr)}
-.v-orb .readout .ch{font-size:14px;font-weight:450}
-.v-orb [data-mood=idle][data-round="1"] .chart{width:min(244px,86%)}
-.v-orb #app:not([data-mood=red]) .readout>:nth-child(n+7){display:none}
+.v-orb .readout{grid-template-columns:var(--chart-gutter) var(--chart-columns)}
+.v-orb .readout .ch{font-size:clamp(11px,3vw,13px);font-weight:450}
+.v-orb #app:not([data-mood=red]) .readout>:is(b,.metric){display:none}
 .v-orb .tone[hidden]{display:block!important;visibility:hidden;opacity:0;transform:scaleX(.75);transition:opacity .16s,transform .24s,visibility 0s .24s}
 .v-orb .params:not([hidden]) .tr{transform-origin:left;animation:grow-rail .68s var(--ease-out) both}
 @keyframes grow-rail{from{transform:scaleX(.04)}to{transform:scaleX(1)}}
@@ -215,6 +214,9 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
 .bars i{width:3px;border-radius:4px;background:white;transition:height .1s linear}
 .pause-hint{display:none}.v-orb .pause-hint{display:block;position:absolute;top:100%;width:220px;margin-top:10px;text-align:center;color:var(--gray-500);font-size:13px}
 .v-orb .act{position:absolute;top:59%;margin:0;transform:translateY(-50%)}
+.v-orb [data-mood=idle][data-round="1"] .act{position:relative;top:auto;transform:none;margin-top:clamp(34px,8dvh,86px)}
+.v-orb [data-round="2"] .ask{position:relative;top:auto;width:100%;margin-top:clamp(50px,calc(18dvh - 42px),140px)}
+.v-orb [data-round="2"] .act{position:relative;top:auto;transform:none;margin-top:clamp(18px,4dvh,42px)}
 .v-orb #go{display:grid;place-items:center;width:60px;height:60px;background:var(--brand-800);border:0;border-radius:50%;color:white}
 .v-orb #go.stop{background:var(--brand-100);color:var(--brand-800)}
 .v-orb #go svg{width:24px;height:24px}
@@ -237,7 +239,7 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
 </head>
 <body class="v-orb">
 <main class="app" id="app">
-  <header class="top only-orb"><span class="stage"><b data-i18n="voice.stage"></b><span aria-hidden="true">·</span><span data-i18n="voice.name"></span></span><span class="dots" id="voiceDots" role="img"></span></header>
+  <header class="top only-orb"><span class="stage"><b data-i18n="voice.stage"></b></span><span class="dots" id="voiceDots" role="img"></span></header>
   <div class="field only-orb" aria-hidden="true"><div class="mist blue"></div><div class="mist red"></div><div class="mist green"></div></div>
   <div class="presence only-orb" aria-hidden="true"></div>
   <div class="probe only-orb" id="probe" role="status" data-i18n-aria-label="voice.probe">
@@ -259,16 +261,17 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
   </div>
 
   <ol class="steps" id="steps">
-    <li data-i18n="voice.step1">Tap the button</li>
+    <li data-i18n="voice.step1">Hold to record</li>
     <li data-i18n="voice.step2">Say the line in the tone</li>
-    <li data-i18n="voice.step3">Pause 1 s to submit</li>
+    <li data-i18n="voice.step3">Release to submit</li>
   </ol>
 
   <section class="ask" aria-labelledby="line">
+    <h1 class="voice-title only-orb" data-i18n="voice.name">Voice verification</h1>
     <div>
       <p class="k" id="askTone" data-i18n="voice.askTone">Tone required</p>
       <div class="val">
-        <div class="tone" id="tone1" data-i18n="voice.tone1"></div>
+        <div class="tone" id="tone1"></div>
         <div class="params" id="params" hidden>
           <div class="prm" id="pPolite"><span><span data-i18n="voice.polite">Polite</span><svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></span>
             <span class="tr"><span class="tg"></span><span class="me"></span></span><span class="v"></span></div>
@@ -279,13 +282,13 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
     </div>
     <div>
       <p class="k" data-i18n="voice.askLine">Say this line</p>
-      <div class="val"><div class="line" id="line" data-i18n="voice.line">Okay, got it.</div></div>
+      <div class="val"><div class="line" id="line"></div></div>
     </div>
-    <figure class="chart" id="chart" role="img" data-i18n-aria-label="voice.chart">
-      <div class="plot-window">
+    <figure class="chart" id="chart" hidden role="img">
+      <div class="chart-content"><div class="plot-window">
         <svg id="plot" preserveAspectRatio="none" viewBox="0 0 330 148" aria-hidden="true"></svg>
       </div>
-      <div class="readout" id="readout" aria-hidden="true"></div>
+      <div class="readout" id="readout" aria-hidden="true"></div></div>
     </figure>
   </section>
 
@@ -305,7 +308,7 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
 
   <div class="act">
     <button id="go" type="button"></button>
-    <small class="pause-hint" data-i18n="voice.pauseHint"></small>
+    <small class="pause-hint"></small>
     <span class="golb" id="golb" aria-hidden="true"></span>
     <span class="clock" id="clock" aria-hidden="true"></span>
   </div>
@@ -318,8 +321,6 @@ body{font-family:var(--font-body);-webkit-font-smoothing:antialiased}
 const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const ROUNDS=3;               // round 3 (±0.5 tolerance + playback) comes next
 const MAXS=7,STEP=20;         // seconds on the strip, ms per envelope sample
-const SPLIT=7.2;              // dB spread: below = "flat / TTS", above = "acting"
-const TARGET={polite:70,imp:30};
 let round=0,env=[],ctx=null,an=null,stream=null,t0=0,raf=0,floor=-60;
 
 /* ---------- look ---------- */
@@ -349,14 +350,40 @@ function meter(){
   });
 }
 
-/* ---------- per-syllable chart ----------
-   Each column is one syllable of the line (the comma is the pause).
-   Up = polite, down = impatient. Solid = what Gate says it measured, hatched cap = what it is guessing.
-   The numbers come from real pitch, volume and length of your voice; the formula is Gate's black box. */
-const SEGS=t('voice.segs').split('|');
-const TARGET_SHAPE=[{pol:72,imp:14},{pol:64,imp:20},{pol:34,imp:8},{pol:22,imp:58},{pol:12,imp:74}];
-const PX=330,BASE=74,SCALE=.66,COL0=40,COLW=(PX-COL0)/5,BW=24;
-let shown=SEGS.map(()=>({pol:0,imp:0,unc:0})),goal=shown.map(o=>({...o})),feat=SEGS.map(()=>null),liveCol=-1,worstCol=-1,anim=0;
+/* Gate interprets acoustic cues theatrically. Each pair of curves runs from
+   the start to the end of a clause, with a separate target for its pause.
+   Weights use relative loudness, pitch movement and pace respectively. */
+const prompts=[
+  {id:'reminder', weights:[[-9,10,-5],[22,-17,20]], start:[80,8], hinge:[65,18], pause:[38,18], resume:[45,30], end:[22,65]},
+  {id:'seat', weights:[[8,26,16],[14,16,-7]], start:[84,10], hinge:[60,24], pause:[52,24], resume:[42,54], end:[18,88]},
+  {id:'home', weights:[[-12,-20,-16],[-15,18,-12]], start:[52,16], hinge:[84,12], pause:[64,32], resume:[38,50], end:[22,72]},
+  {id:'made', weights:[[-22,4,10],[20,-12,-10]], start:[76,8], hinge:[58,18], pause:[38,30], resume:[40,42], end:[14,80]}
+];
+const prompt=prompts[Math.floor(Math.random()*prompts.length)];
+const promptText=field=>t('voice.'+prompt.id+'.'+field);
+$('line').textContent=promptText('line');
+const clauses=promptText('line').slice(1,-1).replace(/[.。?？]$/,'').split(/[,，]\s*/);
+const SEGS=promptText('segments').split('|');
+const pauseCol=SEGS.findIndex(s=>s===','||s==='，');
+const spokenCols=SEGS.map((_,i)=>i).filter(i=>i!==pauseCol);
+const emotion={upper:promptText('first'),lower:promptText('second')};
+$('chart').setAttribute('aria-label',t('voice.chart',{first:emotion.upper,second:emotion.lower}));
+const TARGET_SHAPE=SEGS.map((_,i)=>{
+  if(i===pauseCol)return {upper:prompt.pause[0],lower:prompt.pause[1]};
+  const before=i<pauseCol;
+  const from=before?prompt.start:prompt.resume, to=before?prompt.hinge:prompt.end;
+  const progress=before?i/Math.max(1,pauseCol-1):(i-pauseCol-1)/Math.max(1,SEGS.length-pauseCol-2);
+  return {upper:from[0]+(to[0]-from[0])*progress,lower:from[1]+(to[1]-from[1])*progress};
+});
+const BASE=74,SCALE=.66,COL0=54,BW=15;
+const columnWidths=SEGS.map(label=>Math.max(27,label.length*7+10));
+let PX=COL0;
+const columnStarts=columnWidths.map(width=>{const start=PX;PX+=width;return start;});
+$('plot').setAttribute('viewBox',`0 0 ${PX} 148`);
+$('chart').style.setProperty('--chart-columns',columnWidths.map(w=>w+'fr').join(' '));
+$('chart').style.setProperty('--chart-gutter',(100*COL0/PX)+'%');
+$('chart').style.setProperty('--chart-width',Math.round(PX*.82)+'px');
+let shown=SEGS.map(()=>({upper:0,lower:0,unc:0})),goal=shown.map(o=>({...o})),feat=SEGS.map(()=>null),liveCol=-1,worstCol=-1,anim=0;
 function capBar(x,len,up,r){ // bar from the baseline, rounded at the far end
   if(len<=0.5)return '';
   r=Math.min(r,len);const y=up?BASE-len:BASE+len,d=up?1:-1;
@@ -368,22 +395,23 @@ function plot(){
     <pattern id="hp" width="7" height="5" patternUnits="userSpaceOnUse"><path d="M0 4 L1.75 1 L3.5 4 L5.25 1 L7 4" fill="none" stroke="var(--brand-600)" stroke-width="1.1"/></pattern>
     <pattern id="hi" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--danger)" stroke-width="1.4"/></pattern>
   </defs>`;
-  g+=`<text x="0" y="12" font-size="10" fill="var(--brand-600)" font-weight="600" letter-spacing=".04em">${t('voice.polite')}</text>`;
-  g+=`<text x="0" y="${BASE*2-4}" font-size="10" fill="var(--danger)" font-weight="600" letter-spacing=".04em">${t('voice.impatient')}</text>`;
+  g+=`<text x="0" y="12" font-size="10" fill="var(--brand-600)" font-weight="600" letter-spacing=".04em">${emotion.upper}</text>`;
+  g+=`<text x="0" y="${BASE*2-4}" font-size="10" fill="var(--danger)" font-weight="600" letter-spacing=".04em">${emotion.lower}</text>`;
   shown.forEach((o,i)=>{
-    const x=COL0+i*COLW+(COLW-BW)/2,r=BW/2;
-    if(i===liveCol)g+=`<rect x="${COL0+i*COLW+3}" y="4" width="${COLW-6}" height="${BASE*2-8}" rx="8" fill="var(--brand-50)"/>`;
-    g+=`<path d="${capBar(x,(o.pol+o.unc)*SCALE,true,r)}" fill="url(#hp)"/>`;
-    g+=`<path d="${capBar(x,(o.imp+o.unc)*SCALE,false,r)}" fill="url(#hi)"/>`;
-    g+=`<path d="${capBar(x,o.pol*SCALE,true,r)}" fill="var(--brand-600)"/>`;
-    g+=`<path d="${capBar(x,o.imp*SCALE,false,r)}" fill="var(--danger)"/>`;
+    const width=columnWidths[i],left=columnStarts[i];
+    const x=left+(width-BW)/2,r=BW/2;
+    if(i===liveCol)g+=`<rect x="${left+3}" y="4" width="${width-6}" height="${BASE*2-8}" rx="8" fill="var(--brand-50)"/>`;
+    g+=`<path d="${capBar(x,(o.upper+o.unc)*SCALE,true,r)}" fill="url(#hp)"/>`;
+    g+=`<path d="${capBar(x,(o.lower+o.unc)*SCALE,false,r)}" fill="url(#hi)"/>`;
+    g+=`<path d="${capBar(x,o.upper*SCALE,true,r)}" fill="var(--brand-600)"/>`;
+    g+=`<path d="${capBar(x,o.lower*SCALE,false,r)}" fill="var(--danger)"/>`;
     if(tgt){const T=TARGET_SHAPE[i],w=BW+8,tx=x-4;
       const st=`fill="none" stroke="var(--brand-900)" stroke-width="1.5" stroke-dasharray="3 3"`;
-      g+=`<path d="${capBar(tx,T.pol*SCALE,true,w/2)}" ${st}/><path d="${capBar(tx,T.imp*SCALE,false,w/2)}" ${st}/>`;}
+      g+=`<path d="${capBar(tx,T.upper*SCALE,true,w/2)}" ${st}/><path d="${capBar(tx,T.lower*SCALE,false,w/2)}" ${st}/>`;}
   });
   g+=`<line x1="${COL0-6}" x2="${PX}" y1="${BASE}" y2="${BASE}" stroke="var(--gray-300)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
   sv.innerHTML=g;
-  const cell=(v,i)=>`<span class="${i===liveCol?'on':''}">${v}</span>`;
+  const cell=(v,i)=>`<span class="metric ${i===liveCol?'on':''}">${v}</span>`;
   const f=i=>feat[i];
   $('readout').innerHTML=`<span></span>${SEGS.map((c,i)=>`<span class="ch${i===liveCol?' on':''}${i===worstCol?' worst':''}${missing.includes(i)?' miss':''}">${c}</span>`).join('')}`+
     `<b>${t('voice.pitchRow')}</b>${SEGS.map((_,i)=>cell(f(i)?.hz?Math.round(f(i).hz):'—',i)).join('')}`+
@@ -394,11 +422,11 @@ function plot(){
 function settle(){
   cancelAnimationFrame(anim);
   const step=()=>{let moving=false;
-    shown.forEach((o,i)=>{for(const k of ['pol','imp','unc']){const d=goal[i][k]-o[k];if(Math.abs(d)>.3){o[k]+=d*(reduced.matches?1:.18);moving=true;}else o[k]=goal[i][k];}});
+    shown.forEach((o,i)=>{for(const k of ['upper','lower','unc']){const d=goal[i][k]-o[k];if(Math.abs(d)>.3){o[k]+=d*(reduced.matches?1:.18);moving=true;}else o[k]=goal[i][k];}});
     plot();if(moving)anim=requestAnimationFrame(step);};
   step();
 }
-function resetChart(){missing=[];shown=SEGS.map(()=>({pol:0,imp:0,unc:0}));goal=shown.map(o=>({...o}));feat=SEGS.map(()=>null);liveCol=-1;worstCol=-1;plot();}
+function resetChart(){missing=[];shown=SEGS.map(()=>({upper:0,lower:0,unc:0}));goal=shown.map(o=>({...o}));feat=SEGS.map(()=>null);liveCol=-1;worstCol=-1;plot();}
 /* pitch by autocorrelation, 70–400 Hz; 0 when the frame isn't clearly voiced */
 function pitchOf(buf,sr){
   const N=1024,minL=sr/400|0,maxL=Math.min(buf.length-N,sr/70|0);let e=0;for(let i=0;i<N;i++)e+=buf[i]*buf[i];
@@ -406,16 +434,16 @@ function pitchOf(buf,sr){
   for(let l=minL;l<=maxL;l++){let c=0;for(let i=0;i<N;i++)c+=buf[i]*buf[i+l];if(c>best){best=c;bl=l;}}
   return best/e>.55?sr/bl:0;
 }
-/* while you speak: every syllable has its own loudness bump. Each new bump (an onset) moves to the next column:
-   onsets 1,2 -> 好 的 ; a gap after the 2nd -> the comma ; onsets 3,4 -> 收 到 */
-const CHAR_COL=[0,1,3,4];
-let onsets=[],valley=0,peak=-90,sinceOnset=99,gapRun=0,pauseFrames=0;
-function resetOnsets(){onsets=[];valley=0;peak=-90;sinceOnset=99;gapRun=0;pauseFrames=0;}
+/* Map detected syllable onsets to the current language’s chart columns. */
+let onsets=[],valley=0,peak=-90,sinceOnset=99,gapRun=0,voicedDb=0,voicedCount=0;
+function resetOnsets(){onsets=[];valley=0;peak=-90;sinceOnset=99;gapRun=0;voicedDb=0;voicedCount=0;}
 function chartLive(){
   const i=env.length-1,e=env[i];if(!e)return;
   sinceOnset++;
   if(!e.sp){gapRun++;valley=Math.min(valley,e.db);peak=Math.min(peak,valley);
-    if(onsets.length===2&&gapRun>=6){pauseFrames++;setLive(2,{pol:Math.min(90,pauseFrames*3),imp:Math.max(4,40-pauseFrames*2),unc:22});feat[2]={dur:pauseFrames*STEP/1000,db:null,hz:0};}
+    if(onsets.length===pauseCol&&gapRun>=6){
+      const part={pause:true,dur:gapRun*STEP/1000};feat[pauseCol]=part;setLive(pauseCol,scorePart(part));
+    }
     return;}
   // a new syllable = sound after a gap, or a climb of 5 dB out of a dip that fell 5 dB below the last peak
   const dipped=peak-valley>=5,climbed=e.db-valley>=5;
@@ -423,10 +451,13 @@ function chartLive(){
   else if(e.db>peak){peak=e.db;valley=e.db;}
   else valley=Math.min(valley,e.db);
   gapRun=0;
-  const k=Math.min(onsets.length,4)-1;if(k<0)return;
-  const col=CHAR_COL[k],lvl=Math.max(0,Math.min(1,(e.db-floor)/40));
-  setLive(col,{pol:Math.max(goal[col].pol*.92,lvl*(e.hz>185?78:e.hz?48:40)),imp:Math.max(goal[col].imp*.92,lvl*(e.hz&&e.hz<150?78:44)),unc:12+lvl*12});
-  const f=feat[col]||{dur:0,db:e.db,hz:0};f.dur+=STEP/1000;f.db=Math.round(Math.max(f.db??-90,e.db));if(e.hz)f.hz=e.hz;feat[col]=f;
+  voicedDb+=e.db;voicedCount++;
+  const col=spokenCols[Math.min(onsets.length,spokenCols.length)-1];
+  if(col===undefined)return;
+  const f=feat[col]||{dur:0,db:e.db,hz:0,firstHz:0};
+  f.dur+=STEP/1000;f.db=e.db;f.hz=e.hz||f.hz;f.firstHz||=e.hz;
+  f.slope=f.hz-f.firstHz;f.rel=f.db-voicedDb/voicedCount;
+  feat[col]=f;setLive(col,scorePart(f));
 }
 function setLive(col,v){liveCol=col;Object.assign(goal[col],v);settle();}
 /* after you let go: syllables run from one onset to the next; columns with no onset are "not heard" */
@@ -435,31 +466,31 @@ function syllables(){
   const first=env.findIndex(e=>e.sp);if(first<0)return null;
   const last=env.length-1-[...env].reverse().findIndex(e=>e.sp);
   const voiced=env.filter(e=>e.sp),mean=voiced.reduce((a,e)=>a+e.db,0)/voiced.length;
-  const on=onsets.length?onsets.slice(0,4):[first];
+  const on=onsets.length?onsets.slice(0,spokenCols.length):[first];
   const parts=SEGS.map(()=>null);missing=[];
   on.forEach((a,k)=>{
     let b=k+1<on.length?on[k+1]:last+1;
-    if(k===1&&on.length>2){let j=b-1;while(j>a&&!env[j].sp)j--;const gap=[j+1,b];parts[2]={pause:true,dur:(gap[1]-gap[0])*STEP/1000};b=j+1;}
+    if(k===pauseCol-1&&on.length>pauseCol){let j=b-1;while(j>a&&!env[j].sp)j--;const gap=[j+1,b];parts[pauseCol]={pause:true,dur:(gap[1]-gap[0])*STEP/1000};b=j+1;}
     const fr=env.slice(a,b),vs=fr.filter(e=>e.sp),hzs=vs.map(e=>e.hz).filter(Boolean);
     const avg=arr=>{const h=arr.map(e=>e.hz).filter(Boolean);return h.length?h.reduce((p,q)=>p+q,0)/h.length:0;};
     const third=Math.max(1,(vs.length/3)|0),h0=avg(vs.slice(0,third)),h1=avg(vs.slice(-third));
     const db=vs.length?vs.reduce((p,e)=>p+e.db,0)/vs.length:null;
-    parts[CHAR_COL[k]]={dur:(b-a)*STEP/1000,db,hz:hzs.length?hzs.sort((p,q)=>p-q)[hzs.length>>1]:0,slope:h0&&h1?h1-h0:0,rel:db==null?0:db-mean};
+    parts[spokenCols[k]]={dur:(b-a)*STEP/1000,db,hz:hzs.length?hzs.sort((p,q)=>p-q)[hzs.length>>1]:0,slope:h0&&h1?h1-h0:0,rel:db==null?0:db-mean};
   });
-  if(!parts[2])parts[2]={pause:true,dur:0};
+  if(!parts[pauseCol])parts[pauseCol]={pause:true,dur:0};
   SEGS.forEach((_,i)=>{if(!parts[i])missing.push(i);});
   return parts;
 }
 const clampV=v=>Math.round(Math.max(4,Math.min(96,v)));
-function score(parts){
-  const jit=()=>(Math.random()-.5)*10;
-  return parts.map(p=>{
-    if(!p)return {pol:0,imp:0,unc:34};
-    if(p.pause){const ms=p.dur*1000;return {pol:clampV(ms/5+jit()),imp:clampV((280-ms)/3+jit()),unc:24};}
-    const loud=p.rel/6,fall=p.slope?-p.slope/30:0,fast=(.24-p.dur)/.12,rise=p.slope>0?p.slope/30:0;
-    const imp=clampV(30+22*loud+24*fall+18*fast+jit());
-    return {pol:clampV(80-imp*.75+14*rise-10*loud+jit()),imp,unc:Math.round(8+(p.hz?0:18)+Math.random()*8)};
-  });
+function scorePart(p){
+  if(!p)return {upper:0,lower:0,unc:34};
+  if(p.pause){
+    const ms=p.dur*1000;
+    return {upper:clampV(ms/5),lower:clampV((280-ms)/3),unc:24};
+  }
+  const loud=p.rel/6, rise=p.slope/30, fast=(.24-p.dur)/.12;
+  const value=([volume,pitch,pace])=>clampV(46+volume*loud+pitch*rise+pace*fast);
+  return {upper:value(prompt.weights[0]),lower:value(prompt.weights[1]),unc:p.hz?10:26};
 }
 
 /* ---------- voiceprint probe ---------- */
@@ -610,27 +641,34 @@ const voicedFrames = [];
 async function judge(r){
   steps(0);
   if(!r){draw();reject(t('voice.noVoiceTitle'),t('voice.noVoiceWhy',{sec:(env.filter(e=>e.sp).length*STEP/1000).toFixed(2)}),t('voice.noVoiceNext'));button('record');steps(1);return;}
+  $('chart').hidden=false;
   voicedFrames[round]=r.voicedFrames;
   $('clock').textContent=r.dur.toFixed(1)+' s';
-  const parts=syllables();feat=parts;goal=score(parts);liveCol=-1;settle();
+  const parts=syllables();feat=parts;goal=parts.map(scorePart);liveCol=-1;settle();
   // Gate looks at its own chart and hesitates before deciding
   $('go').disabled=true;Eyes.set('doubt');Eyes.lookAt($('plot'));await wait(reduced.matches?100:950);$('go').disabled=false;
+  let worst=null,sum=0;
+  goal.forEach((reading,i)=>{
+    const target=TARGET_SHAPE[i];
+    for(const k of ['upper','lower']){
+      const d=reading[k]-target[k];
+      sum+=Math.abs(d);
+      // First give a direction about a spoken syllable and its intended emotion.
+      if(round===0&&(!parts[i]||i===pauseCol||k!==(i<pauseCol?'upper':'lower')))continue;
+      if(!worst||Math.abs(d)>Math.abs(worst.d))worst={i,k,d};
+    }
+  });
+  const detail={seg:SEGS[worst.i],emotion:emotion[worst.k].toLowerCase(),
+    dir:t(worst.d>0?'voice.tooHigh':'voice.tooLow')};
+  worstCol=worst.i;plot();
+  const chart=$('chart'),marked=chart.querySelector('.worst');
+  chart.scrollLeft+=marked.getBoundingClientRect().left-chart.getBoundingClientRect().left-chart.clientWidth/2+marked.offsetWidth/2;
   if(round===0){
-    // always rejected: the human band is a 0.2 dB sliver just past whichever side you land on
-    const flat=r.sd<SPLIT,lo=flat?(r.sd+2.1):Math.max(.5,r.sd-3.4),hi=lo+.2;
-    const p={db:r.sd.toFixed(1),lo:lo.toFixed(1),hi:hi.toFixed(1)};
-    draw(flat?'flat':'over');
-    reject(t(flat?'voice.flatTitle':'voice.overTitle'),t(flat?'voice.flatWhy':'voice.overWhy',p),t('voice.flatNext'));
+    draw();reject(t('voice.feedback'),t('voice.feedbackWhy',{...detail,seg:clauses[worst.i<pauseCol?0:1]}),t('voice.flatNext'));
     button('retry');steps(1);return;
   }
-  // round 2: compare your bars with the dashed target shape; the bar is always just out of reach
-  draw();
-  let worst={i:0,k:'imp',d:0},sum=0;
-  goal.forEach((o,i)=>{const T=TARGET_SHAPE[i];for(const k of ['pol','imp']){const d=o[k]-T[k];sum+=Math.abs(d);if(Math.abs(d)>Math.abs(worst.d))worst={i,k,d};}});
-  if(Math.abs(worst.d)<6){worst.d=worst.d<0?-7:7;goal[worst.i][worst.k]=clampV(TARGET_SHAPE[worst.i][worst.k]+worst.d);settle();}
-  const m=Math.min(93,Math.max(41,Math.round(100-sum/10*1.15)));
-  worstCol=worst.i;plot();
-  reject(t('voice.shapeTitle'),t('voice.shapeWhy',{m,seg:SEGS[worst.i],dim:t(worst.k==='pol'?'voice.polite':'voice.impatient').toLowerCase(),dir:t(worst.d>0?'voice.tooHigh':'voice.tooLow'),d:Math.abs(Math.round(worst.d))}),'');
+  const m=Math.min(93,Math.max(41,Math.round(100-sum/(2*SEGS.length)*1.15)));
+  reject(t('voice.shapeTitle'),t('voice.shapeWhy',{...detail,m,dim:detail.emotion,d:Math.round(Math.abs(worst.d))}),'');
   button('next');
 }
 $('sheetRetry').onclick=()=>{
@@ -643,8 +681,9 @@ $('sheetRetry').onclick=()=>{
 function setRound(i){
   $('probe').classList.remove('on');
   Eyes.set(look==='orb'?'watch':'surfaced');$('app').dataset.mood='idle';$('app').dataset.round=i+1;
+  $('chart').scrollLeft=0;
   round=i;setDots();env=[];draw();$('verdict').hidden=true;$('clock').textContent='';
-  $('tone1').textContent=t(i===0?'voice.tone1':'voice.tone2');$('params').hidden=true;
+  $('tone1').textContent=i===0?promptText('tone'):t('voice.tone2');$('params').hidden=true;
   resetChart();
   button('record');steps(1);
 }

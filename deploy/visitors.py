@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 API = "/api/visitor"
 COOKIE = "neverland-pass"
 TOKEN = re.compile(r"[0-9a-f]{32}")
+NAME_LIMIT = 24
 
 
 def identity(secret):
@@ -21,10 +22,34 @@ def identity(secret):
 
 
 def membership(db, key):
-    row = db.execute("SELECT number, verified_at FROM visitors WHERE browser = ?", (key,)).fetchone()
+    row = db.execute("SELECT number, verified_at, name FROM visitors WHERE browser = ?", (key,)).fetchone()
     if not row:
-        return {"number": None, "verified": False}
-    return {"number": row[0], "verified": time.time() < row[1] + 86400}
+        return {"number": None, "verified": False, "name": None}
+    return {"number": row[0], "verified": time.time() < row[1] + 86400, "name": row[2]}
+
+
+def clean_name(value):
+    # One visible line of at most NAME_LIMIT characters; an empty name means "leave no name".
+    if not isinstance(value, str):
+        raise ValueError
+    name = " ".join("".join(ch for ch in value if ch.isprintable()).split())
+    if len(name) > NAME_LIMIT:
+        raise ValueError
+    return name or None
+
+
+def sign(db, key, data):
+    name = clean_name(data.get("name"))
+    status = membership(db, key)
+    if not status["verified"]:
+        raise PermissionError
+    db.execute("UPDATE visitors SET name = ? WHERE number = ?", (name, status["number"]))
+    return {"number": status["number"], "name": name}
+
+
+def roster(db):
+    rows = db.execute("SELECT number, name FROM visitors WHERE name IS NOT NULL ORDER BY number").fetchall()
+    return [{"number": number, "name": name} for number, name in rows]
 
 
 def certify(db, key, data):
@@ -76,12 +101,15 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Location", "/stage3.html" + ("?" + urlsplit(self.path).query if urlsplit(self.path).query else ""))
             self.end_headers()
             return
-        if path in (API, API + "/check") or self.server.preview and path in ("/pass.html", "/forum.html"):
+        if path in (API, API + "/check", API + "/names") or self.server.preview and path in ("/pass.html", "/forum.html"):
             secret = self.cookie()
             with closing(sqlite3.connect(self.server.db)) as db:
                 status = membership(db, identity(secret)) if secret else {"number": None, "verified": False}
+                names = roster(db) if path == API + "/names" else None
             if path == API:
                 return self.reply(200, status)
+            if names is not None:
+                return self.reply(200, {"visitors": names})
             if path.endswith("/check"):
                 return self.reply(204 if status["verified"] else 401)
             if not status["verified"]:
@@ -98,7 +126,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
-        if path != API + "/complete":
+        if path not in (API + "/complete", API + "/name"):
             return self.reply(404)
         origin = self.headers.get("Origin", "")
         allowed = f"http://127.0.0.1:{self.server.server_port}" if self.server.preview else "https://portal.ariari.art"
@@ -115,9 +143,11 @@ class Handler(SimpleHTTPRequestHandler):
             if not isinstance(secret, str) or not TOKEN.fullmatch(secret):
                 raise ValueError
             with closing(sqlite3.connect(self.server.db, timeout=10)) as db, db:
-                result = certify(db, identity(secret), data)
+                result = (certify if path.endswith("/complete") else sign)(db, identity(secret), data)
         except (ValueError, UnicodeError):
             return self.reply(400)
+        except PermissionError:
+            return self.reply(401)
         except sqlite3.Error:
             return self.reply(503)
         self.reply(200, result, secret if result.get("number") else None)
@@ -135,6 +165,8 @@ if __name__ == "__main__":
         db.executescript("""
             CREATE TABLE IF NOT EXISTS visitors(number INTEGER PRIMARY KEY, browser TEXT NOT NULL UNIQUE, verified_at INTEGER NOT NULL);
         """)
+        if "name" not in {column[1] for column in db.execute("PRAGMA table_info(visitors)")}:
+            db.execute("ALTER TABLE visitors ADD COLUMN name TEXT")
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     server.db, server.preview = args.db, args.preview
     server.serve_forever()
