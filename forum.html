@@ -371,7 +371,13 @@ async function showExistingCamera() {
     camera.hidden = false;
   } catch { /* The welcome dialog also works without a camera preview. */ }
 }
-showExistingCamera();
+const cameraChoice = flowCamera.choice();
+if (cameraChoice === 'off') {
+  document.querySelector('[data-i18n="forum.camera"]').textContent = t('forum.cameraExempt');
+  document.getElementById('wsorry').textContent = t('forum.cameraExempt');
+} else if (cameraChoice === 'on' || !i18n.visit) {
+  showExistingCamera();
+}
 
 let fade;
 document.getElementById('responses').addEventListener('click', event => {

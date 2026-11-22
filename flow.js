@@ -3,6 +3,18 @@
   var ORDER=['index.html','start.html','face.html','stage2.html','stage3.html','certified.html','pass.html','forum.html','credits.html'];
   var portal = location.hostname === 'portal.ariari.art';
   var deployed = portal || location.hostname === 'ariari.art';
+  // Portal and forum live on different hosts. Keep the camera choice scoped to this visit.
+  function cameraCookie(){ return window.i18n.visit ? 'neverland-visit-camera' : 'neverland-camera'; }
+  window.flowCamera = {
+    choose(choice){
+      const scope = deployed ? '; Domain=ariari.art; Secure' : '';
+      document.cookie = cameraCookie() + '=' + choice + '; Path=' + window.i18n.visit + '/; SameSite=Lax' + scope;
+    },
+    choice(){
+      const key = cameraCookie() + '=';
+      return document.cookie.split('; ').find(cookie => cookie.startsWith(key))?.slice(key.length);
+    }
+  };
   function route(page){
     if(!deployed) return page;
     if(page === 'index.html') return 'https://ariari.art/';

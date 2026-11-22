@@ -148,6 +148,9 @@ body{background:#fff}
 .gate h1{font-size:var(--fs-lead);margin:0 0 6px}
 .gate p{margin:0}
 .gate .gicon{margin-bottom:12px}
+.gate .decline,.gate .decline:hover{margin-top:6px;height:auto;min-height:40px;background:transparent;color:var(--gray-700);font-size:var(--fs-small);text-decoration:underline;text-underline-offset:3px}
+.gate .refusal-count{margin:14px 0;color:var(--gray-500);font-size:var(--fs-caption)}
+.gate .final-appeal{height:96px;font-size:24px}
 .gate .err:empty{display:none}
 .gate.out{opacity:0;transform:translateY(16px)}
 .gate .local{margin:18px 0 18px;padding:12px 0 0;border-top:1px solid var(--line);font:900 22px/1.1 var(--font-display);letter-spacing:.01em;color:var(--danger)}
@@ -200,17 +203,26 @@ html:lang(zh-CN) .gate .local{font:400 24px/1.1 PortalPixel,"PingFang SC",sans-s
 <!-- The notice stays in place until the visitor confirms and the camera starts. -->
 <div class="gate" id="gate" role="dialog" aria-labelledby="gt"><div>
   <img class="gicon" src="assets/svg/scan-face.svg" alt="" width="48" height="48">
+  <section id="cameraPrompt">
   <h1 id="gt" data-i18n="face.heading">Face Verification</h1>
   <p data-i18n="face.position">Select OK to turn on your camera, then put your face inside the circle.</p>
   <p class="local" data-i18n="face.local">ALL DATA IS PROCESSED LOCALLY.</p>
   <button type="button" id="ok" disabled data-i18n="face.okCountdown" data-n="3">OK (3)</button>
-  <div class="err" id="err"></div>
+  <button type="button" class="decline" id="refuse" data-i18n="face.refuse">No, I won’t</button>
+  <p class="err" id="err" role="status"></p>
+  </section>
+  <section id="refusalPrompt" hidden>
+    <h1 id="refusalTitle" tabindex="-1"></h1>
+    <p id="refusalBody"></p>
+    <p class="refusal-count" id="refusalCount"></p>
+    <button type="button" id="reconsider"></button>
+    <button type="button" class="decline" id="confirmRefusal"></button>
+  </section>
 </div></div>
 
 <script src="eyes.js" data-scene="face"></script>
 <script>i18n.apply(document);</script>
 <script type="module">
-import {FilesetResolver,FaceLandmarker,ObjectDetector} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 const $=id=>document.getElementById(id);
 const v=$('v'),cv=$('c'),ctx=cv.getContext('2d'),dpr=Math.min(2,devicePixelRatio||1);
 
@@ -239,6 +251,7 @@ function loadModel(){
   if(face)return Promise.resolve(face);
   if(modelTask)return modelTask;
   modelTask=(async()=>{
+    const {FilesetResolver,FaceLandmarker}=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14");
     const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
     const make=delegate=>FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",delegate},runningMode:"VIDEO",numFaces:1,outputFaceBlendshapes:true});
     try{face=await make("GPU");}catch{face=await make("CPU");}
@@ -248,22 +261,67 @@ function loadModel(){
 }
 loadModel().catch(()=>{});
 
+let cameraAttempt = 0;
+let refusalStep = 0;
+function stopCamera(){
+  v.srcObject?.getTracks().forEach(track=>track.stop());
+  v.srcObject=null;
+}
+function showRefusal(step){
+  refusalStep=step;
+  const approved=step===4;
+  $('cameraPrompt').hidden=true;
+  $('refusalPrompt').hidden=false;
+  $('gate').setAttribute('aria-labelledby','refusalTitle');
+  $('refusalTitle').textContent=t('face.refuseTitle'+step);
+  $('refusalBody').textContent=t('face.refuseBody'+step);
+  $('refusalCount').textContent=approved?'':t('face.refusalCount',{n:step});
+  $('reconsider').textContent=t(approved?'face.continue':step===2?'face.reconsiderAgain':'face.reconsider');
+  $('reconsider').classList.toggle('final-appeal',step===3);
+  $('confirmRefusal').hidden=approved;
+  $('confirmRefusal').textContent=t(step===3?'face.thirdConfirmation':'face.confirmRefusal');
+  $('refusalTitle').focus();
+}
+$('refuse').onclick=()=>{
+  ++cameraAttempt;
+  stopCamera();
+  flowCamera.choose('off');
+  $('ok').classList.remove('busy','done');
+  $('ok').removeAttribute('aria-label');
+  $('err').textContent='';
+  showRefusal(1);
+};
+$('confirmRefusal').onclick=()=>showRefusal(refusalStep+1);
+$('reconsider').onclick=()=>{
+  if(refusalStep===4){flowNext();return;}
+  refusalStep=0;
+  $('refusalPrompt').hidden=true;
+  $('cameraPrompt').hidden=false;
+  $('gate').setAttribute('aria-labelledby','gt');
+  if(countdownReady){$('ok').textContent=t('face.ok');$('ok').disabled=false;}
+  $('refuse').focus();
+};
+
 async function confirmCamera(){
   const button=$('ok');
-  if(button.disabled)return;
+  if(button.disabled || refusalStep)return;
+  const attempt=++cameraAttempt;
   button.disabled=true;
   $('err').textContent='';
-  // Open the camera straight from the tap, before waiting on the model.
+  // Permission may resolve after the visitor has already chosen to refuse.
   try {
-    if(!v.srcObject)v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});
+    if(attempt!==cameraAttempt){stream.getTracks().forEach(track=>track.stop());return;}
+    v.srcObject=stream;
     await v.play();
   } catch {
-    v.srcObject?.getTracks().forEach(track=>track.stop());
-    v.srcObject=null;
+    if(attempt!==cameraAttempt)return;
+    stopCamera();
     $('err').textContent=t('face.cameraBlocked');
     button.disabled=false;
     return;
   }
+  if(attempt!==cameraAttempt)return;
   // Spinner while the model loads, then a check before the card leaves.
   button.classList.add('busy');
   button.setAttribute('aria-label',t('face.loading'));
@@ -271,6 +329,8 @@ async function confirmCamera(){
   if(!face){
     try{await loadModel();}
     catch{
+      if(attempt!==cameraAttempt)return;
+      stopCamera();
       $('err').textContent=t('face.modelError');
       button.classList.remove('busy');
       button.removeAttribute('aria-label');
@@ -279,9 +339,13 @@ async function confirmCamera(){
       return;
     }
   }
+  if(attempt!==cameraAttempt)return;
   button.classList.add('done');
   button.removeAttribute('aria-label');
   await new Promise(resolve=>setTimeout(resolve,matchMedia('(prefers-reduced-motion: reduce)').matches?150:560));
+  if(attempt!==cameraAttempt)return;
+  flowCamera.choose('on');
+  $('refuse').disabled=true;
   const gate=$('gate');
   gate.classList.add('out');
   setTimeout(()=>gate.remove(),400);
@@ -289,6 +353,7 @@ async function confirmCamera(){
   requestAnimationFrame(loop);
 }
 
+let countdownReady=false;
 (async()=>{
   const button=$('ok');
   for(let n=3;n>0;n--){
@@ -296,9 +361,10 @@ async function confirmCamera(){
     await new Promise(resolve=>setTimeout(resolve,1000));
   }
   button.textContent=t('face.ok');
+  countdownReady=true;
   button.onclick=confirmCamera;
   button.disabled=false;
-  button.focus();
+  if(!refusalStep && document.activeElement===document.body)button.focus();
 })();
 // ---- drawing inside the lens ----
 function sizeCanvas(){const r=cv.getBoundingClientRect();cv.width=r.width*dpr;cv.height=r.height*dpr;}
